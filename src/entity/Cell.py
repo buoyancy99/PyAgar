@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class Cell:
     def __init__(self, gameServer, owner, position, size):
@@ -40,11 +41,11 @@ class Cell:
             if self.size >= 250 and prey.size<=41 and prey.cellType == 0:
                 prey.radius = 0
 
-        self.setSize(np.sqrt(self.radius + prey.radius))
+        self.setSize(math.sqrt(self.radius + prey.radius))
 
     def setBoot(self, distance, angle):
         self.boostDistance = distance
-        self.boostDirection = np.array(np.sin(angle), np.cos(angle))
+        self.boostDirection = np.array(math.sin(angle), math.cos(angle))
         self.isMoving = True
         if not self.owner:
             idx = self.gameServer.movingNodes.index(self)
@@ -55,13 +56,13 @@ class Cell:
         r = self.size / 2
         if self.position[0] < border.minx + r or self.position[0] > border.maxx - r:
             self.boostDirection[0] = -self.boostDirection[0]
-            self.position[0] = np.maximum(self.position[0], border.minx + r)
-            self.position[0] = np.minimum(self.position[0], border.minx - r)
+            self.position[0] = math.max(self.position[0], border.minx + r)
+            self.position[0] = math.min(self.position[0], border.minx - r)
 
         if self.position[1] < border.miny + r or self.position[1] > border.maxy - r:
             self.boostDirection[1] = -self.boostDirection[1]
-            self.position[1] = np.maximum(self.position[1], border.miny + r)
-            self.position[1] = np.minimum(self.position[1], border.miny - r)
+            self.position[1] = math.max(self.position[1], border.miny + r)
+            self.position[1] = math.min(self.position[1], border.miny - r)
 
     def onEaten(self):
         return
