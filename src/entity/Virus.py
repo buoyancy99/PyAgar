@@ -3,7 +3,7 @@ import math
 import random
 import numpy as np
 
-class Food(Cell):
+class Virus(Cell):
     def __init__(self, gameServer, owner, position, size):
         Cell.__init__(self, gameServer, owner, position, size)
         self.cellType = 2
