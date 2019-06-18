@@ -138,120 +138,116 @@ class GameServer():
         process.exit(1) # Exits the program
 
 
-        def onClientSocketOpen(ws, req):
-        req = req or ws.upgradeReq
-        logip = ws._socket.remoteAddress + ":" + ws._socket.remotePort
-        ws.on('error', function (err) {
-            Logger.writeError("[" + logip + "] " + err.stack)
-        })
-        if (self.config.serverMaxConnections and self.socketCount >= self.config.serverMaxConnections) {
-            ws.close(1000, "No slots")
-            return
-        }
-        if (self.checkIpBan(ws._socket.remoteAddress)) {
-            ws.close(1000, "IP banned")
-            return
-        }
-        if (self.config.serverIpLimit) {
-            ipConnections = 0
-            for (i = 0 i < self.clients.length i++) {
-                socket = self.clients[i]
-                if (!socket.isConnected or socket.remoteAddress != ws._socket.remoteAddress)
-                    continue
-                ipConnections++
-            }
-            if (ipConnections >= self.config.serverIpLimit) {
-                ws.close(1000, "IP limit reached")
+        def onClientSocketOpen(self, ws, req):
+            req = req or ws.upgradeReq
+            logip = ws._socket.remoteAddress + ":" + ws._socket.remotePort
+            ws.on('error', function (err) {
+                Logger.writeError("[" + logip + "] " + err.stack)
+            })
+
+            if self.config.serverMaxConnections and self.socketCount >= self.config.serverMaxConnections:
+                ws.close(1000, "No slots")
                 return
-            }
-        }
-        if (self.config.clientBind.length and req.headers.origin.indexOf(self.clientBind) < 0) {
-            ws.close(1000, "Client not allowed")
-            return
-        }
-        ws.isConnected = True
-        ws.remoteAddress = ws._socket.remoteAddress
-        ws.remotePort = ws._socket.remotePort
-        ws.lastAliveTime = Date.now()
-        Logger.write("CONNECTED " + ws.remoteAddress + ":" + ws.remotePort + ", origin: \"" + req.headers.origin + "\"")
 
-
-        PlayerTracker = require('./PlayerTracker')
-        ws.playerTracker = new PlayerTracker(self, ws)
-        PacketHandler = require('./PacketHandler')
-        ws.packetHandler = new PacketHandler(self, ws)
-        PlayerCommand = require('./modules/PlayerCommand')
-        ws.playerCommand = new PlayerCommand(self, ws.playerTracker)
-
-        self = self
-        ws.on('message', function (message) {
-            if (self.config.serverWsModule === "uws")
-                # uws gives ArrayBuffer - convert it to Buffer
-                message = parseInt(process.version[1]) < 6 ? Buffer.from(message) : Buffer.from(message)
-
-            if (!message.length) return
-            if (message.length > 256) {
-                ws.close(1009, "Spam")
+            if self.checkIpBan(ws._socket.remoteAddress):
+                ws.close(1000, "IP banned")
                 return
-            }
-            ws.packetHandler.handleMessage(message)
-        })
-        ws.on('error', function (error) {
-            ws.packetHandler.sendPacket(selfdata) {}
-        })
-        ws.on('close', function (reason) {
-            if (ws._socket and ws._socket.destroy != null and typeof ws._socket.destroy == 'function') {
-                ws._socket.destroy()
-            }
-            self.socketCount--
-            ws.isConnected = False
-            ws.packetHandler.sendPacket(selfdata) {}
-            ws.closeReason = {
-                reason: ws._closeCode,
-                message: ws._closeMessage
-            }
-            ws.closeTime = Date.now()
-            Logger.write("DISCONNECTED " + ws.remoteAddress + ":" + ws.remotePort + ", code: " + ws._closeCode +
-                ", reason: \"" + ws._closeMessage + "\", name: \"" + ws.playerTracker._name + "\"")
-        })
-        self.socketCount++
-        self.clients.append(ws)
 
-        # Check for external minions
-        self.checkMinion(ws, req)
-    }
+            if self.config.serverIpLimit:
+                ipConnections = 0
+                for i in range(self.clients.length):
+                    socket = self.clients[i]
+                    if not socket.isConnected or socket.remoteAddress != ws._socket.remoteAddress:
+                        continue
+                    ipConnections+=1
 
-    def checkMinion(selfws, req) {
-    # Check headers (maybe have a config for self?)
-    if (!req.headers['user-agent'] or !req.headers['cache-control'] or
-        req.headers['user-agent'].length < 50) {
-        ws.playerTracker.isMinion = True
-    }
-    # External minion detection
-    if (self.config.serverMinionThreshold) {
-        if ((ws.lastAliveTime - self.startTime) / 1000 >= self.config.serverMinionIgnoreTime) {
-            if (self.minionTest.length >= self.config.serverMinionThreshold) {
-                ws.playerTracker.isMinion = True
-                for (i = 0 i < self.minionTest.length i++) {
-                    playerTracker = self.minionTest[i]
-                    if (!playerTracker.socket.isConnected) continue
-                    playerTracker.isMinion = True
+                if ipConnections >= self.config.serverIpLimit:
+                    ws.close(1000, "IP limit reached")
+                    return
+
+            if self.config.clientBind.length and req.headers.origin.indexOf(self.clientBind) < 0):
+                ws.close(1000, "Client not allowed")
+                return
+
+            ws.isConnected = True
+            ws.remoteAddress = ws._socket.remoteAddress
+            ws.remotePort = ws._socket.remotePort
+            ws.lastAliveTime = datetime.now()
+            Logger.write("CONNECTED " + ws.remoteAddress + ":" + ws.remotePort + ", origin: \"" + req.headers.origin + "\"")
+
+
+            PlayerTracker = require('./PlayerTracker')
+            ws.playerTracker = new PlayerTracker(self, ws)
+            PacketHandler = require('./PacketHandler')
+            ws.packetHandler = new PacketHandler(self, ws)
+            PlayerCommand = require('./modules/PlayerCommand')
+            ws.playerCommand = new PlayerCommand(self, ws.playerTracker)
+
+            ws.on('message', function (message) {
+                if (self.config.serverWsModule === "uws")
+                    # uws gives ArrayBuffer - convert it to Buffer
+                    message = parseInt(process.version[1]) < 6 ? Buffer.from(message) : Buffer.from(message)
+
+                if not message.length:
+                    return
+                if message.length > 256:
+                    ws.close(1009, "Spam")
+                    return
+
+                ws.packetHandler.handleMessage(message)
+            })
+            ws.on('error', function (error) {
+                ws.packetHandler.sendPacket(selfdata) {}
+            })
+            ws.on('close', function (reason) {
+                if (ws._socket and ws._socket.destroy != null and typeof ws._socket.destroy == 'function') {
+                    ws._socket.destroy()
                 }
-                if (self.minionTest.length) self.minionTest.splice(0, 1)
-            }
-            self.minionTest.append(ws.playerTracker)
-        }
-    }
-    # Add server minions if needed
-    if (self.config.serverMinions and !ws.playerTracker.isMinion) {
-        for (i = 0 i < self.config.serverMinions i++) {
-            self.bots.addMinion(ws.playerTracker)
-            ws.playerTracker.minionControl = True
-        }
-    }
-}
+                self.socketCount--
+                ws.isConnected = False
+                ws.packetHandler.sendPacket(selfdata) {}
+                ws.closeReason = {
+                    reason: ws._closeCode,
+                    message: ws._closeMessage
+                }
+                ws.closeTime = Date.now()
+                Logger.write("DISCONNECTED " + ws.remoteAddress + ":" + ws.remotePort + ", code: " + ws._closeCode +
+                    ", reason: \"" + ws._closeMessage + "\", name: \"" + ws.playerTracker._name + "\"")
+            })
+            self.socketCount++
+            self.clients.append(ws)
 
-    def setBorder(width, height):
+            # Check for external minions
+            self.checkMinion(ws, req)
+
+    def checkMinion(self, ws, req):
+        # Check headers (maybe have a config for self?)
+        if (not req.headers['user-agent'] or not req.headers['cache-control'] or req.headers['user-agent'].length < 50):
+            ws.playerTracker.isMinion = True
+        # External minion detection
+        if self.config.serverMinionThreshold:
+            if (ws.lastAliveTime - self.startTime) / 1000 >= self.config.serverMinionIgnoreTime:
+                if self.minionTest.length >= self.config.serverMinionThreshold:
+                    ws.playerTracker.isMinion = True
+                    for i in range(self.minionTest.length):
+                        playerTracker = self.minionTest[i]
+                        if not playerTracker.socket.isConnected:
+                            continue
+                        playerTracker.isMinion = True
+                    if self.minionTest.length:
+                        self.minionTest.pop(0)
+                self.minionTest.append(ws.playerTracker)
+
+        # Add server minions if needed
+        if self.config.serverMinions and not ws.playerTracker.isMinion:
+            for i in range(self.config.serverMinions):
+                self.bots.addMinion(ws.playerTracker)
+                ws.playerTracker.minionControl = True
+
+
+
+
+    def setBorder(self, width, height):
         hw = width / 2
         hh = height / 2
         self.border = {
@@ -264,14 +260,14 @@ class GameServer():
         }
 
 
-    def getRandomColor():
+    def getRandomColor(self):
         colorRGB = [0xff, 0x07, random.randint(256) // 2]
         random.shuffle(colorRGB)
         # return random
         return {'r': colorRGB[0], 'g': colorRGB[1], 'b': colorRGB[2]}
 
 
-    def removeNode(node):
+    def removeNode(self, node):
         # Remove from quad-tree
         node.isRemoved = True
         self.quadTree.remove(node.quadItem)
@@ -288,43 +284,45 @@ class GameServer():
         # Special on-remove actions
         node.onRemove(self)
 
-    def updateClients():
+    def updateClients(self):
         # check dead clients
         len = self.clients.length
-        for (i = 0 i < len) {
-            if (!self.clients[i]) {
-                i++
+        i = 0
+        while i < len:
+            if not self.clients[i]:
+                i+=1
                 continue
-            }
+
             self.clients[i].playerTracker.checkConnection()
-            if (self.clients[i].playerTracker.isRemoved)
+            if self.clients[i].playerTracker.isRemoved:
                 # remove dead client
-                self.clients.splice(i, 1)
-            else
-                i++
-        }
+                self.clients.pop(i)
+            else:
+                i+=1
         # update
-        for (i = 0 i < len i++) {
-            if (!self.clients[i]) continue
+        for i in range(len):
+            if not self.clients[i]:
+                continue
             self.clients[i].playerTracker.updateTick()
-        }
-        for (i = 0 i < len i++) {
-            if (!self.clients[i]) continue
+
+        for i in range(len):
+            if not self.clients[i]:
+                continue
             self.clients[i].playerTracker.sendUpdate()
-        }
+
 
         # check minions
-        for (i = 0, test = self.minionTest.length i < test) {
-            if (!self.minionTest[i]) {
-                i++
+
+        for i = 0, test = self.minionTest.length i < test:
+            if not self.minionTest[i]:
+                i+=1
                 continue
-            }
+
             date = new Date() - self.minionTest[i].connectedTime
-            if (date > self.config.serverMinionInterval)
-                self.minionTest.splice(i, 1)
-            else
-                i++
-        }
+            if date > self.config.serverMinionInterval:
+                self.pop(i)
+            else:
+                i+=1
 
     def timerLoop(self):
         timeStep = 40 # vanilla: 40
@@ -396,39 +394,40 @@ class GameServer():
 
             # Update players and scan for collisions
             eatCollisions = []
-            self.nodesPlayer.forEach((cell) => {
-                if (cell.isRemoved) return
+            for cell in self.nodesPlayer:
+                if cell.isRemoved:
+                    return
                 # Scan for eat/rigid collisions and resolve them
                 self.quadTree.find(cell.quadItem.bound, function (check) {
                     m = self.checkCellCollision(cell, check)
                     if (self.checkRigidCollision(m))
                         self.resolveRigidCollision(m)
-                    else if (check != cell)
+                    elif check != cell:
                         eatCollisions.unshift(m)
                 })
                 self.movePlayer(cell, cell.owner)
                 self.boostCell(cell)
                 self.autoSplit(cell, cell.owner)
                 # Decay player cells once per second
-                if (((self.tickCounter + 3) % 25) === 0)
+                if ((self.tickCounter + 3) % 25) == 0:
                     self.updateSizeDecay(cell)
                 # Remove external minions if necessary
-                if (cell.owner.isMinion) {
+                if cell.owner.isMinion:
                     cell.owner.socket.close(1000, "Minion")
                     self.removeNode(cell)
-                }
-            })
-            eatCollisions.forEach((m) => {
+
+            for m in eatCollisions:
                 self.resolveCollision(m)
-            })
-            if ((self.tickCounter % self.config.spawnInterval) === 0) {
+
+            if (self.tickCounter % self.config.spawnInterval) == 0:
                 # Spawn food & viruses
                 self.spawnCells()
-            }
+
             self.gameMode.onTick(self)
-            self.tickCounter++
-        }
-        if (not self.run and self.gameMode.IsTournament):
+            self.tickCounter+=1
+
+
+        if not self.run and self.gameMode.IsTournament:
             self.tickCounter+=1
         self.updateClients()
 
@@ -443,7 +442,7 @@ class GameServer():
         # update-update time
         tEnd = process.hrtime(tStart)
         self.updateTime = tEnd[0] * 1e3 + tEnd[1] / 1e6
-}
+
 
 # update remerge first
     def movePlayer(self, cell, client):
@@ -785,115 +784,113 @@ class GameServer():
         self.addNode(newVirus)
 
 
-    def loadFiles(self) {
-    # Load config
-    fs = require("fs")
-    fileNameConfig = self.srcFiles + '/gameserver.ini'
-    ini = require(self.srcFiles + '/modules/ini.js')
-    try {
-        if (!fs.existsSync(fileNameConfig)) {
-            # No config
-            Logger.warn("Config not found... Generating new config")
-            # Create a new config
-            fs.writeFileSync(fileNameConfig, ini.stringify(self.config), 'utf-8')
-        } else {
-            # Load the contents of the config file
-            load = ini.parse(fs.readFileSync(fileNameConfig, 'utf-8'))
-            # Replace all the default config's values with the loaded config's values
-            for (key in load) {
-                if (self.config.hasOwnProperty(key)) self.config[key] = load[key]
-                else Logger.error("Unknown gameserver.ini value: " + key)
-            }
-        }
-    } catch (err) {
-        Logger.error(err.stack)
-        Logger.error("Failed to load " + fileNameConfig + ": " + err.message)
-    }
-    Logger.setVerbosity(self.config.logVerbosity)
-    Logger.setFileVerbosity(self.config.logFileVerbosity)
+    def loadFiles(self):
+        # Load config
+        fs = require("fs")
+        fileNameConfig = self.srcFiles + '/gameserver.ini'
+        ini = require(self.srcFiles + '/modules/ini.js')
+        try:
+            if not fs.existsSync(fileNameConfig):
+                # No config
+                Logger.info("=======Config not found... Generating new config")
+                # Create a new config
+                fs.writeFileSync(fileNameConfig, ini.stringify(self.config), 'utf-8')
+            else:
+                # Load the contents of the config file
+                load = ini.parse(fs.readFileSync(fileNameConfig, 'utf-8'))
+                # Replace all the default config's values with the loaded config's values
+                for key in load:
+                    if self.config.hasOwnProperty(key):
+                        self.config[key] = load[key]
+                    else Logger.error("Unknown gameserver.ini value: " + key)
 
-    # Load bad words
-    fileNameBadWords = self.srcFiles + '/badwords.txt'
-    try {
-        if (!fs.existsSync(fileNameBadWords)) {
-            Logger.warn(fileNameBadWords + " not found")
-        } else {
-            words = fs.readFileSync(fileNameBadWords, 'utf-8')
-            words = words.split(/[\r\n]+/)
-            words = words.map(function (arg) {
-                return " " + arg.trim().toLowerCase() + " " # Formatting
-            })
-            words = words.filter(function (arg) {
-                return arg.length > 2
-            })
-            self.badWords = words
-            Logger.info(self.badWords.length + " bad words loaded")
-        }
-    } catch (err) {
-        Logger.error(err.stack)
-        Logger.error("Failed to load " + fileNameBadWords + ": " + err.message)
-    }
 
-    # Load user list
-    UserRoleEnum = require(self.srcFiles + '/enum/UserRoleEnum')
-    fileNameUsers = self.srcFiles + '/enum/userRoles.json'
-    try {
-        self.userList = []
-        if (!fs.existsSync(fileNameUsers)) {
-            Logger.warn(fileNameUsers + " is missing.")
-            return
-        }
-        usersJson = fs.readFileSync(fileNameUsers, 'utf-8')
-        list = JSON.parse(usersJson.trim())
-        for (i = 0 i < list.length) {
-            item = list[i]
-            if (!item.hasOwnProperty("ip") or
-                !item.hasOwnProperty("password") or
-                !item.hasOwnProperty("role") or
-                !item.hasOwnProperty("name")) {
-                list.splice(i, 1)
-                continue
-            }
-            if (!item.password or !item.password.trim()) {
-                Logger.warn("User account \"" + item.name + "\" disabled")
-                list.splice(i, 1)
-                continue
-            }
-            if (item.ip) item.ip = item.ip.trim()
-            item.password = item.password.trim()
-            if (!UserRoleEnum.hasOwnProperty(item.role)) {
-                Logger.warn("Unknown user role: " + item.role)
-                item.role = UserRoleEnum.USER
-            } else {
-                item.role = UserRoleEnum[item.role]
-            }
-            item.name = (item.name or "").trim()
-            i++
-        }
-        self.userList = list
-        Logger.info(self.userList.length + " user records loaded.")
-    } catch (err) {
-        Logger.error(err.stack)
-        Logger.error("Failed to load " + fileNameUsers + ": " + err.message)
-    }
+        except err:
+            Logger.error(err.stack)
+            Logger.error("Failed to load " + fileNameConfig + ": " + err.message)
 
-    # Load ip ban list
-    fileNameIpBan = self.srcFiles + '/ipbanlist.txt'
-    try {
-        if (fs.existsSync(fileNameIpBan)) {
-            # Load and input the contents of the ipbanlist file
-            self.ipBanList = fs.readFileSync(fileNameIpBan, "utf8").split(/[\r\n]+/).filter(function (x) {
-                return x != '' # filter empty lines
-            })
-            Logger.info(self.ipBanList.length + " IP ban records loaded.")
-        } else {
-            Logger.warn(fileNameIpBan + " is missing.")
-        }
-    } catch (err) {
-        Logger.error(err.stack)
-        Logger.error("Failed to load " + fileNameIpBan + ": " + err.message)
-    }
+        Logger.setVerbosity(self.config.logVerbosity)
+        Logger.setFileVerbosity(self.config.logFileVerbosity)
 
-    # Convert config settings
-    self.config.serverRestart = self.config.serverRestart === 0 ? 1e999 : self.config.serverRestart * 1500
-}
+        # Load bad words
+        fileNameBadWords = self.srcFiles + '/badwords.txt'
+        try:
+            if not fs.existsSync(fileNameBadWords):
+                Logger.warn(fileNameBadWords + " not found")
+            else:
+                words = fs.readFileSync(fileNameBadWords, 'utf-8')
+                words = words.split(/[\r\n]+/)
+                words = words.map(function (arg) {
+                    return " " + arg.trim().toLowerCase() + " " # Formatting
+                })
+                words = words.filter(function (arg) {
+                    return arg.length > 2
+                })
+                self.badWords = words
+                Logger.info(self.badWords.length + " bad words loaded")
+            }
+        except err:
+            Logger.error(err.stack)
+            Logger.error("Failed to load " + fileNameBadWords + ": " + err.message)
+
+        # Load user list
+        UserRoleEnum = require(self.srcFiles + '/enum/UserRoleEnum')
+        fileNameUsers = self.srcFiles + '/enum/userRoles.json'
+        tryL
+            self.userList = []
+            if not fs.existsSync(fileNameUsers):
+                Logger.warn(fileNameUsers + " is missing.")
+                return
+
+            usersJson = fs.readFileSync(fileNameUsers, 'utf-8')
+            list = JSON.parse(usersJson.trim())
+            i = 0
+            while i < list.length:
+                item = list[i]
+                if (not item.hasOwnProperty("ip") or not item.hasOwnProperty("password") or not item.hasOwnProperty("role") or item.hasOwnProperty("name")):
+                    list.pop(i)
+                    continue
+
+                if not item.password or not item.password.trim():
+                    Logger.warn("User account \"" + item.name + "\" disabled")
+                    list.pop(i)
+                    continue
+
+                if item.ip:
+                    item.ip = item.ip.trim()
+                item.password = item.password.trim()
+                if not UserRoleEnum.hasOwnProperty(item.role):
+                    Logger.warn("Unknown user role: " + item.role)
+                    item.role = UserRoleEnum.USER
+                else:
+                    item.role = UserRoleEnum[item.role]
+
+                item.name = (item.name or "").trim()
+                i+=1
+
+            self.userList = list
+            Logger.info(self.userList.length + " user records loaded.")
+        except err:
+            Logger.error(err.stack)
+            Logger.error("Failed to load " + fileNameUsers + ": " + err.message)
+
+
+        # Load ip ban list
+        fileNameIpBan = self.srcFiles + '/ipbanlist.txt'
+        try:
+            if fs.existsSync(fileNameIpBan):
+                # Load and input the contents of the ipbanlist file
+                self.ipBanList = fs.readFileSync(fileNameIpBan, "utf8").split(/[\r\n]+/).filter(function (x) {
+                    return x != '' # filter empty lines
+                })
+                Logger.info(self.ipBanList.length + " IP ban records loaded.")
+            else:
+                Logger.warn(fileNameIpBan + " is missing.")
+
+        except err:
+            Logger.error(err.stack)
+            Logger.error("Failed to load " + fileNameIpBan + ": " + err.message)
+
+        # Convert config settings
+        self.config.serverRestart = 1e999 if self.config.serverRestart == 0 else self.config.serverRestart * 1500
+
