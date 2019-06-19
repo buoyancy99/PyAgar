@@ -1,7 +1,6 @@
 from .Cell import Cell
 import math
 import random
-from ..abstraction import *
 from ..modules import *
 
 class Virus(Cell):
