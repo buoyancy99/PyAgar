@@ -1,4 +1,4 @@
-from ..abstraction import *
+from GameAbstractions import *
 
 def disjoint(a, b):
     return b.minx >= a.maxx or b.maxx <= a.minx or b.miny >= a.maxy or b.maxy <= a.miny
@@ -25,7 +25,7 @@ class QuadNode:
         item._quadNode = self;  # used for quick search quad node by item
 
         # split and rebalance current node
-        if self.childNodes.length == 0 and self.items.length > 64:
+        if not self.childNodes and len(self.items) > 64:
             # split into 4 subnodes (top, left, bottom, right)
             w = self.halfWidth
             h = self.halfHeight

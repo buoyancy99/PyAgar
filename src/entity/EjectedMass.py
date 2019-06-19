@@ -1,4 +1,4 @@
-from .Cell import Cell
+from Cell import Cell
 class EjectedMass(Cell):
     def __init__(self, gameServer, owner, position, size):
         Cell.__init__(self, gameServer, owner, position, size)

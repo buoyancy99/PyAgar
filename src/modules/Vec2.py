@@ -13,7 +13,7 @@ class Vec2:
         self.y += d.y * m
         return self
 
-    def sub(self, x, y = None):
+    def sub(self, x, y=None):
         if isinstance(x, Vec2):
             self.x -= x.x
             self.y -= x.y
@@ -24,7 +24,7 @@ class Vec2:
         return self
 
 
-    def sub(self, d, m):
+    def sub2(self, d, m):
         self.x -= d.x * m
         self.y -= d.y * m
         return self

@@ -1,7 +1,7 @@
-from .Cell import Cell
+from Cell import Cell
 import math
 import random
-from ..modules import *
+from modules import *
 
 class Virus(Cell):
     def __init__(self, gameServer, owner, position, size):

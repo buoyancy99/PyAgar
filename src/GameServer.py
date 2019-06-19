@@ -52,10 +52,12 @@ class GameServer:
         self.setBorder(self.config.borderWidth, self.config.borderHeight)
         self.quadTree = QuadNode(self.border)
 
-    def start(self, players, gamemode=1):
+    def start(self, gamemode=1):
         # Set up gamemode(s)
         self.gameMode = Get_Game_Mode(gamemode)
         self.gameMode.onServerInit(self)
+
+    def addPlayers(self, players):
         self.players = players
 
     def addNode(self, node):
@@ -70,13 +72,13 @@ class GameServer:
         node.onAdd(self)
 
     def setBorder(self, width, height):
-        hw = width // 2
-        hh = height // 2
+        hw = width / 2
+        hh = height / 2
         self.border = Bound(-hw, -hh, hw, hh)
 
     @staticmethod
     def getRandomColor():
-        colorRGB = [0xff, 0x07, random.randint(256) // 2]
+        colorRGB = [0xff, 0x07, random.randint(0, 256)]
         random.shuffle(colorRGB)
         # return random
         return Color(*colorRGB)
@@ -106,8 +108,7 @@ class GameServer:
                 i += 1
                 continue
 
-            self.players[i].playerTracker.checkConnection()
-            if self.players[i].playerTracker.isRemoved:
+            if self.players[i].isRemoved:
                 # remove dead player
                 self.players.pop(i)
             else:
@@ -116,12 +117,12 @@ class GameServer:
         for player in self.players:
             if not player:
                 continue
-            player.playerTracker.updateTick()
+            player.updateTick()
 
-        for player in self.players:
-            if not player:
-                continue
-            player.playerTracker.sendUpdate()
+        # for player in self.players:
+        #     if not player:
+        #         continue
+        #     player.playerTracker.sendUpdate()
 
     def Update(self):
         skipstep = 1
@@ -391,13 +392,13 @@ class GameServer:
             size = player.spawnmass
 
         # Check if can spawn from ejected mass
-        index = math.floor(len(self.nodesEjected) * random.random())
-        eject = self.nodesEjected[index]  # Randomly selected
-        if random.random() <= self.config.ejectSpawnPercent and eject and eject.boostDistance < 1:
-            # Spawn from ejected mass
-            pos = eject.position.clone()
-            player.color = eject.color
-            size = max(size, eject.size * 1.15)
+        if self.nodesEjected:
+            eject = random.choice(self.nodesEjected) # Randomly selected
+            if random.random() <= self.config.ejectSpawnPercent and eject and eject.boostDistance < 1:
+                # Spawn from ejected mass
+                pos = eject.position.clone()
+                player.color = eject.color
+                size = max(size, eject.size * 1.15)
 
         # Spawn player safely (do not check minions)
         cell = PlayerCell(self, player, pos, size)

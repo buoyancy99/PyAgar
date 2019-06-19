@@ -1,4 +1,4 @@
-from .Cell import Cell
+from Cell import Cell
 import math
 
 class PlayerCell(Cell):
@@ -21,7 +21,7 @@ class PlayerCell(Cell):
 
         #TODO
         #self.owner.socket.packetHandler.sendPacket(new Packet.AddNode(self.owner, self))
-
+        self.gameServer.nodesPlayer.insert(0, self);
         gameServer.gameMode.onCellAdd(self)
 
     def onRemove(self, gameServer):

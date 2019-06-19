@@ -1,5 +1,5 @@
 import math
-from ..modules import *
+from modules import *
 
 class Cell:
     def __init__(self, gameServer, owner, position, size):
@@ -18,6 +18,7 @@ class Cell:
         self.boostDistance = 0
         self.boostDirection = Vec2(1, 0)
         self.quadItem = None
+        self.isRemoved = False
 
         if self.gameServer:
             self.tickOfBirth = self.gameServer.tickCounter
@@ -34,7 +35,7 @@ class Cell:
     def canEat(self, cell):
         return False
 
-    def getAge(self, cell):
+    def getAge(self):
         return self.gameServer.tickCounter - self.tickOfBirth
 
     def onEat(self, prey):

@@ -5,34 +5,58 @@ import math
 import numpy as np
 
 class Player:
-    def __init__(self, gameServer):
+    def __init__(self, gameServer, name = 'dummy'):
         self.gameServer = gameServer
-        self.name = None
-        self.mouse = None
+        self.name = name
+        self.mouse = Vec2(0, 0)
+        self.centerPos = Vec2(0, 0)
         self.cells = []
         self.frozen = False
         self.mergeOverride = False
         self.spectate = False
         self.score = 0
         self.isRemoved = False
+        self.spawnmass = 0
+        if gameServer:
+            gameServer.lastPlayerId += 1
+            self.pID = gameServer.lastPlayerId
+            gameServer.gameMode.onPlayerInit(self)
+            self.joinGame()
 
     def step(self, action):
         if self.isRemoved:
             return
-        # action in format [0] mouse x, [1] mouse y, [2] key space bool, [3] key w bool, [4] no key bool
-        self.update_view()
+        # action in format [0] mouse x, [1 mouse y, [2] key space bool, [3] key w bool, [4] no key bool
         self.mouse = Vec2(action[0], action[1])
-        assert np.sum(action[2:]) == 1
+        # assert np.sum(action[2:]) == 1
         if action[2] == 1:
             self.pressSpace()
         elif action[3] == 1:
             self.pressW()
 
-    def update_view(self):
-        # TODO
-        self.setCenterPos()
+    def updateTick(self):
+        self.updateSpecView()
+        scale = max(self.getScale(), self.gameServer.config.serverMinScale)
+        halfWidth = (self.gameServer.config.serverViewBaseX + 100) / scale / 2
+        halfHeight = (self.gameServer.config.serverViewBaseY + 100) / scale / 2
+        self.viewBox = Bound(
+            self.centerPos.x - halfWidth,
+            self.centerPos.y - halfHeight,
+            self.centerPos.x + halfWidth,
+            self.centerPos.y + halfHeight)
 
-    #
+        self.viewNodes = []
+        self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.push(check))
+        self.viewNodes = sorted(self.viewNodes, lambda x: x.nodeId)
+
+    def updateSpecView(self):
+        cx = 0
+        cy = 0
+        for cell in self.cells:
+            cx += cell.position.x
+            cy += cell.position.y
+        self.centerPos = Vec2(cx / len(self.cells), cy / len(self.cells))
+
     def pressSpace(self):
         if self.gameServer.run:
             if len(self.cells) <= 2:
@@ -63,6 +87,12 @@ class Player:
         else:
             self.scale = math.pow(min(64 / scale, 1), 0.4)
         return self.scale
+
+    def joinGame(self):
+        if self.cells:
+            return
+        self.gameServer.gameMode.onPlayerSpawn(self.gameServer, self)
+
 
 
 

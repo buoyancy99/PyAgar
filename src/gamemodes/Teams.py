@@ -1,5 +1,5 @@
-from .Mode import Mode
-from ..modules import *
+from Mode import Mode
+from modules import *
 import random
 import math
 
@@ -16,13 +16,13 @@ class Teams(Mode):
         self.colorFuzziness = 32
 
         # Special
-        self.teamAmount = 3; # Amount of teams. Having more than 3 teams will cause the leaderboard to work incorrectly (client issue).
+        self.teamAmount = 3; # Amount of teams. Having more than 3 teams will cause the leaderboard to work incorrectly (player issue).
         self.colors = [Color(223, 0, 0),Color(0, 223, 0), Color(0, 0, 223)] # Make sure you add extra colors here if you wish to increase the team amount [Default colors are: Red, Green, Blue]
         self.nodes = []; # Teams
 
 
     def fuzzColorComponent(self, component):
-        component += random.random() * self.colorFuzziness >> 0
+        component += int(random.random() * self.colorFuzziness)
         return component
 
 
@@ -43,8 +43,8 @@ class Teams(Mode):
             self.nodes.append([])
 
     # migrate current players to team mode
-        for client in gameServer.clients:
-            tracker = client.playerTracker
+        for player in gameServer.players:
+            tracker = player.playerTracker
             self.onPlayerInit(tracker)
             tracker.color = self.getTeamColor(tracker.team)
             for cell in tracker.cells:

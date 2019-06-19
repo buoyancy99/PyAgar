@@ -1,4 +1,4 @@
-from .Mode import Mode
+from Mode import Mode
 
 def FFA():
     def __init__(self):
