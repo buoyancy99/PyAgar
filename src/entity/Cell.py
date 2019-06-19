@@ -1,12 +1,13 @@
-import numpy as np
 import math
+from ..abstraction import *
+from ..modules import *
 
 class Cell:
     def __init__(self, gameServer, owner, position, size):
         self.gameServer = gameServer
         self.owner = owner #playerTracker that owns this cell
 
-        self.color = np.array([0,0,0])
+        self.color = Color(0,0,0)
         self.radius = 0
         self.size = 0
         self.mass = 0
@@ -16,7 +17,7 @@ class Cell:
         self.killedBy = None
         self.isMoving = False
         self.boostDistance = 0
-        self.boostDirection = np.array([1, 0])
+        self.boostDirection = Vec2(1, 0)
 
         if self.gameServer:
             self.tickOfBirth = self.gameServer.tickCounter
@@ -43,9 +44,9 @@ class Cell:
 
         self.setSize(math.sqrt(self.radius + prey.radius))
 
-    def setBoot(self, distance, angle):
+    def setBoost(self, distance, angle):
         self.boostDistance = distance
-        self.boostDirection = np.array(math.sin(angle), math.cos(angle))
+        self.boostDirection = Vec2(math.sin(angle), math.cos(angle))
         self.isMoving = True
         if not self.owner:
             idx = self.gameServer.movingNodes.index(self)
@@ -54,15 +55,16 @@ class Cell:
 
     def checkBorder(self, border):
         r = self.size / 2
-        if self.position[0] < border.minx + r or self.position[0] > border.maxx - r:
-            self.boostDirection[0] = -self.boostDirection[0]
-            self.position[0] = math.max(self.position[0], border.minx + r)
-            self.position[0] = math.min(self.position[0], border.minx - r)
+        if self.position.x < border.minx + r or self.position.x > border.maxx - r:
+            self.boostDirection.scale(-1, 1);
+            self.position.x = math.max(self.position.x, border.minx + r);
+            self.position.x = math.min(self.position.x, border.maxx - r);
 
-        if self.position[1] < border.miny + r or self.position[1] > border.maxy - r:
-            self.boostDirection[1] = -self.boostDirection[1]
-            self.position[1] = math.max(self.position[1], border.miny + r)
-            self.position[1] = math.min(self.position[1], border.miny - r)
+        if self.position.y < border.miny + r or self.position.y > border.maxy - r:
+            self.boostDirection.scale(1, -1);
+            self.position.y = math.max(self.position.y, border.miny + r);
+            self.position.y = math.min(self.position.y, border.maxy - r);
+
 
     def onEaten(self):
         return

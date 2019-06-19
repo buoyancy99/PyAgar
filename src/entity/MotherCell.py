@@ -1,8 +1,9 @@
 from .Food import Food
 from .Cell import Cell
-import numpy as np
 import math
 import random
+from ..abstraction import *
+from ..modules import *
 
 class MotherCell(Cell):
     def __init__(self, gameServer, owner, position, size):
@@ -10,7 +11,7 @@ class MotherCell(Cell):
         self.cellType = 2
         self.isSpiked = True
         self.isMotherCell = True
-        self.color = np.array([206, 99, 99])
+        self.color = Color(206, 99, 99)
         self.motherCellMinSize = 149
         self.motherCellSpawnAmount = 2
         if not self.size:
@@ -34,7 +35,7 @@ class MotherCell(Cell):
             self.setSize(size1)
 
             angle = random.random() * 2 * math.pi
-            pos = self.position + size1 * np.array(math.sin(angle), math.cos(angle))
+            pos = self.position + size1 * Vec2(math.sin(angle), math.cos(angle))
 
             food = Food(self.gameServer, None, pos, size2)
             food.color = self.gameServer.getRandomColor()

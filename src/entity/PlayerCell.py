@@ -1,6 +1,5 @@
 from .Cell import Cell
 import math
-import numpy as np
 
 class PlayerCell(Cell):
     def __init__(self, gameServer, owner, position, size):

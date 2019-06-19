@@ -7,7 +7,6 @@ class Food(Cell):
     def onAdd(self, gameServer):
         gameServer.nodesEjected.append(self)
 
-
     def onRemove(self, gameServer):
         idx = gameServer.nodesEjected.index(self)
         if idx != -1:

@@ -1,10 +1,13 @@
-import numpy as np
 import math
 from Config import Config
 import random
 from datetime import datetime
+from abstraction import *
+from modules import *
+from entity import *
 
-class GameServer():
+
+class GameServer:
     def __init__(self):
 
         self.srcFiles = "../src"
@@ -53,7 +56,6 @@ class GameServer():
         self.loadFiles()
 
         # Set border, quad-tree
-        QuadNode = require('./modules/QuadNode.js')
         self.setBorder(self.config.borderWidth, self.config.borderHeight)
         self.quadTree = QuadNode(self.border)
 
@@ -106,21 +108,12 @@ class GameServer():
 
     def addNode(self, node):
         # Add to quad-tree & node list
-        x = node.position[0]
-        y = node.position[1]
+        x = node.position.x
+        y = node.position.y
         s = node.size
-        node.quadItem = {
-            cell: node, # update viewbox for players
-            bound: {
-                minx: x - s,
-                miny: y - s,
-                maxx: x + s,
-                maxy: y + s
-            }
-        }
+        node.quadItem = QuadItem(node, Bound(x - s, y - s, x + s, y + s))
         self.quadTree.insert(node.quadItem)
         self.nodes.append(node)
-
         # Special on-add actions
         node.onAdd(self)
 
@@ -186,7 +179,8 @@ class GameServer():
             ws.on('message', function (message) {
                 if (self.config.serverWsModule === "uws")
                     # uws gives ArrayBuffer - convert it to Buffer
-                    message = parseInt(process.version[1]) < 6 ? Buffer.from(message) : Buffer.from(message)
+                    message = parseInt(process.version[1]) < 6 ? Buffer.from(message) : Buffer.from
+            message
 
                 if not message.length:
                     return
@@ -200,7 +194,7 @@ class GameServer():
                 ws.packetHandler.sendPacket(selfdata) {}
             })
             ws.on('close', function (reason) {
-                if (ws._socket and ws._socket.destroy != null and typeof ws._socket.destroy == 'function') {
+                if ws._socket and ws._socket.destroy != null and typeof {
                     ws._socket.destroy()
                 }
                 self.socketCount--
@@ -222,7 +216,7 @@ class GameServer():
 
     def checkMinion(self, ws, req):
         # Check headers (maybe have a config for self?)
-        if (not req.headers['user-agent'] or not req.headers['cache-control'] or req.headers['user-agent'].length < 50):
+        if not req.headers['user-agent'] or not req.headers['cache-control'] or req.headers['user-agent'].length < 50:
             ws.playerTracker.isMinion = True
         # External minion detection
         if self.config.serverMinionThreshold:
@@ -245,26 +239,17 @@ class GameServer():
                 ws.playerTracker.minionControl = True
 
 
-
-
     def setBorder(self, width, height):
-        hw = width / 2
-        hh = height / 2
-        self.border = {
-        "minx": -hw,
-        "miny": -hh,
-        "maxx": hw,
-        "maxy": hh,
-        "width": width,
-        "height": height
-        }
+        hw = width // 2
+        hh = height // 2
+        self.border = Bound(-hw, -hh, hw, hh)
 
 
-    def getRandomColor(self):
+    def getRandomColor():
         colorRGB = [0xff, 0x07, random.randint(256) // 2]
         random.shuffle(colorRGB)
         # return random
-        return {'r': colorRGB[0], 'g': colorRGB[1], 'b': colorRGB[2]}
+        return Color(*colorRGB)
 
 
     def removeNode(self, node):
@@ -286,9 +271,8 @@ class GameServer():
 
     def updateClients(self):
         # check dead clients
-        len = self.clients.length
         i = 0
-        while i < len:
+        while i < len(self.clients):
             if not self.clients[i]:
                 i+=1
                 continue
@@ -300,27 +284,28 @@ class GameServer():
             else:
                 i+=1
         # update
-        for i in range(len):
-            if not self.clients[i]:
+        for client in self.clients:
+            if not client:
                 continue
-            self.clients[i].playerTracker.updateTick()
+            client.playerTracker.updateTick()
 
-        for i in range(len):
-            if not self.clients[i]:
+        for client in self.clients:
+            if not client:
                 continue
-            self.clients[i].playerTracker.sendUpdate()
+            client.playerTracker.sendUpdate()
 
 
         # check minions
-
-        for i = 0, test = self.minionTest.length i < test:
+        i = 0
+        test = len(self.minionTest)
+        while i < test:
             if not self.minionTest[i]:
                 i+=1
                 continue
 
             date = new Date() - self.minionTest[i].connectedTime
             if date > self.config.serverMinionInterval:
-                self.pop(i)
+                self.minionTest.pop(i)
             else:
                 i+=1
 
@@ -354,8 +339,8 @@ class GameServer():
             self.run = True
             self.lastNodeId = 1
             self.lastPlayerId = 1
-            for i in range(self.clients.length):
-                self.clients[i].close()
+            for client in self.clients:
+                client.close()
 
             self.nodes = []
             self.nodesVirus = []
@@ -371,7 +356,7 @@ class GameServer():
             self.tickCounter = 0
             self.startTime = datetime.now()
             self.setBorder(self.config.borderWidth, self.config.borderHeight)
-            self.quadTree = new QuadNode(self.border, 64, 32)
+            self.quadTree = QuadNode(self.border, 64, 32)
 
 
         # Loop main functions
@@ -382,13 +367,14 @@ class GameServer():
                     return
                 # Scan and check for ejected mass / virus collisions
                 self.boostCell(cell)
-                self.quadTree.find(cell.quadItem.bound, function (check) {
+                def callback_fun(check):
                     m = self.checkCellCollision(cell, check)
-                    if (cell.cellType == 3 and check.cellType == 3 and not self.config.mobilePhysics:
+                    if cell.cellType == 3 and check.cellType == 3 and not self.config.mobilePhysics:
                         self.resolveRigidCollision(m)
                     else:
                         self.resolveCollision(m)
-                })
+
+                self.quadTree.find(cell.quadItem.bound, callback_fun)
                 if not cell.isMoving:
                     self.movingNodes = None
 
@@ -398,13 +384,14 @@ class GameServer():
                 if cell.isRemoved:
                     return
                 # Scan for eat/rigid collisions and resolve them
-                self.quadTree.find(cell.quadItem.bound, function (check) {
+                def callback_fun(check):
                     m = self.checkCellCollision(cell, check)
-                    if (self.checkRigidCollision(m))
+                    if self.checkRigidCollision(m):
                         self.resolveRigidCollision(m)
                     elif check != cell:
-                        eatCollisions.unshift(m)
-                })
+                        eatCollisions.insert(0, m)
+
+                self.quadTree.find(cell.quadItem.bound, callback_fun)
                 self.movePlayer(cell, cell.owner)
                 self.boostCell(cell)
                 self.autoSplit(cell, cell.owner)
@@ -432,11 +419,11 @@ class GameServer():
         self.updateClients()
 
         # update leaderboard
-        if (((self.tickCounter + 7) % 25) == 0):
+        if ((self.tickCounter + 7) % 25) == 0:
             self.updateLeaderboard() # once per second
 
         # ping server tracker
-        if (self.config.serverTracker and (self.tickCounter % 750) === 0)
+        if self.config.serverTracker and (self.tickCounter % 750) == 0:
             self.pingServerTracker() # once per 30 seconds
 
         # update-update time
@@ -446,7 +433,7 @@ class GameServer():
 
 # update remerge first
     def movePlayer(self, cell, client):
-        if (client.socket.isConnected == False or client.frozen or not client.mouse):
+        if client.socket.isConnected == False or client.frozen or not client.mouse:
             return # Do not move
 
         # get movement from vector
@@ -458,9 +445,9 @@ class GameServer():
 
         # update remerge
         time = self.config.playerRecombineTime,
-        base = math.max(time, cell._size * 0.2) * 25
+        base = max(time, cell.size * 0.2) * 25
         # instant merging conditions
-        if (not time or client.rec or client.mergeOverride):
+        if not time or client.rec or client.mergeOverride:
             cell._canRemerge = cell.boostDistance < 100
             return # instant merge
 
@@ -473,18 +460,18 @@ class GameServer():
         rate = self.config.playerDecayRate
         cap = self.config.playerDecayCap
 
-        if (not rate or cell._size <= self.config.playerMinSize):
+        if not rate or cell.size <= self.config.playerMinSize:
             return
 
         # remove size from cell at decay rate
-        if (cap and cell._mass > cap):
+        if cap and cell.mass > cap:
             rate *= 10
         decay = 1 - rate * self.gameMode.decayMod
         cell.setSize(math.sqrt(cell.radius * decay))
 
 
     def boostCell(self, cell):
-        if (cell.isMoving and not cell.boostDistance or cell.isRemoved):
+        if cell.isMoving and not cell.boostDistance or cell.isRemoved:
             cell.boostDistance = 0
             cell.isMoving = False
             return
@@ -505,15 +492,15 @@ class GameServer():
             maxSize = self.config.playerMaxSize
 
         # check size limit
-        if client.mergeOverride or cell._size < maxSize:
+        if client.mergeOverride or cell.size < maxSize:
             return
-        if client.cells.length >= self.config.playerMaxCells or self.config.mobilePhysics:
+        if len(client.cells) >= self.config.playerMaxCells or self.config.mobilePhysics:
             # cannot split => just limit
             cell.setSize(maxSize)
         else:
             # split in random direction
-            angle = math.random() * 2 * math.PI
-            self.splitPlayerCell(client, cell, angle, cell._mass * .5)
+            angle = random.random() * 2 * math.pi
+            self.splitPlayerCell(client, cell, angle, cell.mass * .5)
 
 
 
@@ -529,11 +516,10 @@ class GameServer():
 
 
 # Checks cells for collision
-    def checkCellCollision(self, cell, check):
+    def checkCellCollision(cell, check):
         p = check.position.clone().sub(cell.position)
-
     # create collision manifold
-        return {'cell': cell, 'check': check, 'd': p.sqDist(), 'p': p}
+        return Collision(cell, check, p.sqDist(), p)
 
 
 # Checks if collision is rigid body collision
@@ -543,23 +529,23 @@ class GameServer():
 
         if m.cell.owner != m.check.owner:
             # Minions don't collide with their team when the config value is 0
-            if (self.gameMode.haveTeams and m.check.owner.isMi or m.cell.owner.isMi and self.config.minionCollideTeam == 0):
+            if self.gameMode.haveTeams and m.check.owner.isMi or m.cell.owner.isMi and self.config.minionCollideTeam == 0:
                 return False
             else:
                 # Different owners => same team
                 return self.gameMode.haveTeams and m.cell.owner.team == m.check.owner.team
 
         r = 1 if self.config.mobilePhysics else 13
-        if (m.cell.getAge() < r or m.check.getAge() < r):
+        if m.cell.getAge() < r or m.check.getAge() < r:
             return False # just splited => ignore
 
-        return not m.cell._canRemerge or not m.check._canRemerge
+        return not m.cell.canRemerge or not m.check.canRemerge
 
 
 # Resolves rigid body collisions
-    def resolveRigidCollision(self, m):
-        push = (m.cell._size + m.check._size - m.d) / m.d
-        if (push <= 0 or m.d == 0):
+    def resolveRigidCollision(m):
+        push = (m.cell.size + m.check.size - m.d) / m.d
+        if push <= 0 or m.d == 0:
             return # do not extrude
 
         # body impulse
@@ -573,10 +559,10 @@ class GameServer():
 
 
 # Resolves non-rigid body collision
-    def resolveCollision(m):
+    def resolveCollision(self, m):
         cell = m.cell
         check = m.check
-        if cell._size > check._size:
+        if cell.size > check.size:
             cell = m.check
             check = m.cell
 
@@ -586,15 +572,15 @@ class GameServer():
 
         # check eating distance
         check.div = 20 if self.config.mobilePhysics else 3
-        if m.d >= check._size - cell._size / check.div:
+        if m.d >= check.size - cell.size / check.div:
             return # too far => can't eat
 
 
         # collision owned => ignore, resolve, or remerge
         if cell.owner and cell.owner == check.owner:
-            if (cell.getAge() < 13 or check.getAge() < 13):
+            if cell.getAge() < 13 or check.getAge() < 13:
                 return # just splited => ignore
-        elif check._size < cell._size * 1.15 or not check.canEat(cell):
+        elif check.size < cell.size * 1.15 or not check.canEat(cell):
             return # Cannot eat or cell refuses to be eaten
 
         # Consume effect
@@ -618,34 +604,30 @@ class GameServer():
         parent.setSize(size1)
 
         # Create cell and add it to node list
-        newCell = Entity.PlayerCell(self, client, parent.position, size)
+        newCell = PlayerCell(self, client, parent.position, size)
         newCell.setBoost(self.config.splitVelocity * math.pow(size, 0.0122), angle)
         self.addNode(newCell)
 
 
     def randomPos(self):
-        return np.array([
-            self.border.minx + self.border.width * math.random(),
-            self.border.miny + self.border.height * math.random()]
-        )
-
+        return Vec2(self.border.minx + self.border.width * random.random(), self.border.miny + self.border.height * random.random())
 
     def spawnCells(self):
         # spawn food at random size
-        maxCount = self.config.foodMinAmount - self.nodesFood.length
-        spawnCount = math.min(maxCount, self.config.foodSpawnAmount)
+        maxCount = self.config.foodMinAmount - len(self.nodesFood)
+        spawnCount = min(maxCount, self.config.foodSpawnAmount)
         for i in range(spawnCount):
-            cell = Entity.Food(self, None, self.randomPos(), self.config.foodMinSize)
+            cell = Food(self, None, self.randomPos(), self.config.foodMinSize)
             if self.config.foodMassGrow:
-                maxGrow = self.config.foodMaxSize - cell._size
-                cell.setSize(cell._size += maxGrow * math.random())
+                maxGrow = self.config.foodMaxSize - cell.size
+                cell.setSize(cell.size + maxGrow * random.random())
 
             cell.color = self.getRandomColor()
             self.addNode(cell)
 
         # spawn viruses (safely)
-        if (self.nodesVirus.length < self.config.virusMinAmount):
-            virus = Entity.Virus(self, None, self.randomPos(), self.config.virusMinSize)
+        if len(self.nodesVirus) < self.config.virusMinAmount:
+            virus = Virus(self, None, self.randomPos(), self.config.virusMinSize)
             if not self.willCollide(virus):
                 self.addNode(virus)
 
@@ -660,16 +642,16 @@ class GameServer():
             size = player.spawnmass
 
         # Check if can spawn from ejected mass
-        index = math.floor(self.nodesEjected.length * math.random())
+        index = math.floor(len(self.nodesEjected) * random.random())
         eject = self.nodesEjected[index] # Randomly selected
-        if (math.random() <= self.config.ejectSpawnPercent and eject and eject.boostDistance < 1):
+        if random.random() <= self.config.ejectSpawnPercent and eject and eject.boostDistance < 1:
             # Spawn from ejected mass
             pos = eject.position.clone()
             player.color = eject.color
-            size = math.max(size, eject._size * 1.15)
+            size = max(size, eject.size * 1.15)
 
         # Spawn player safely (do not check minions)
-        cell = Entity.PlayerCell(self, player, pos, size)
+        cell = PlayerCell(self, player, pos, size)
         if self.willCollide(cell) and not player.isMi:
             pos = self.randomPos() # Not safe => retry
         self.addNode(cell)
@@ -686,22 +668,19 @@ class GameServer():
         if d.dist() + sqSize <= sqSize * 2:
             notSafe = True
 
-        self.quadTree.find({
-            minx: cell.position.x - cell._size,
-            miny: cell.position.y - cell._size,
-            maxx: cell.position.x + cell._size,
-            maxy: cell.position.y + cell._size
-        }, function (n) {
-            if (n.cellType == 0) notSafe = True
-        })
+        def callback_fun(n):
+            nonlocal notSafe
+            if n.cellType == 0:
+                notSafe = True
+
+        self.quadTree.find(Bound(cell.position.x - cell.size, cell.position.y - cell.size, cell.position.x + cell.size, cell.position.y + cell.size), callback_fun)
+
         return notSafe
-}
+
 
     def splitCells(self, client):
         # Split cell order decided by cell age
-        cellToSplit = []
-        for i in range(client.cells.length):
-            cellToSplit.append(client.cells[i])
+        cellToSplit = [cell for cell in client.cells]
 
         for cell in cellToSplit:
             d = client.mouse.clone().sub(cell.position)
@@ -709,23 +688,23 @@ class GameServer():
                 d.x = 1
                 d.y = 0
 
-            if cell._size < self.config.playerMinSplitSize:
+            if cell.size < self.config.playerMinSplitSize:
                 return  # cannot split
 
             # Get maximum cells for rec mode
             if client.rec:
-                max = 200  # rec limit
+                max_cell_rec = 200  # rec limit
             else:
-                max = self.config.playerMaxCells
-            if client.cells.length >= max:
+                max_cell_rec = self.config.playerMaxCells
+            if len(client.cells) >= max_cell_rec:
                 return
 
             # Now split player cells
-            self.splitPlayerCell(client, cell, d.angle(), cell._mass * .5)
+            self.splitPlayerCell(client, cell, d.angle(), cell.mass * .5)
 
 
     def canEjectMass(self, client):
-        if client.lastEject == None:
+        if client.lastEject is None:
             # first eject
             client.lastEject = self.tickCounter
             return True
@@ -741,10 +720,8 @@ class GameServer():
     def ejectMass(self, client):
         if not self.canEjectMass(client) or client.frozen:
             return
-        for i in range(client.cells.length):
-            cell = client.cells[i]
-
-            if (cell._size < self.config.playerMinEjectSize)
+        for cell in client.cells:
+            if cell.size < self.config.playerMinEjectSize:
                 continue # Too small to eject
 
             d = client.mouse.clone().sub(cell.position)
@@ -758,17 +735,14 @@ class GameServer():
             cell.setSize(math.sqrt(loss))
 
             # Get starting position
-            pos = np.array([
-                cell.position.x + d.x * cell._size,
-                cell.position.y + d.y * cell._size
-            ])
-            angle = d.angle() + (math.random() * .6) - .3
+            pos = Vec2(cell.position.x + d.x * cell.size, cell.position.y + d.y * cell.size)
+            angle = d.angle() + (random.random() * .6) - .3
 
             # Create cell and add it to node list
             if not self.config.ejectVirus:
-                ejected = Entity.EjectedMass(self, None, pos, self.config.ejectSize)
+                ejected = EjectedMass(self, None, pos, self.config.ejectSize)
             else:
-                ejected = Entity.Virus(self, None, pos, self.config.ejectSize)
+                ejected = Virus(self, None, pos, self.config.ejectSize)
 
             ejected.color = cell.color
             ejected.setBoost(self.config.ejectVelocity, angle)
@@ -779,118 +753,6 @@ class GameServer():
     def shootVirus(self, parent, angle):
         # Create virus and add it to node list
         pos = parent.position.clone()
-        newVirus = Entity.Virus(self, None, pos, self.config.virusMinSize)
+        newVirus = Virus(self, None, pos, self.config.virusMinSize)
         newVirus.setBoost(self.config.virusVelocity, angle)
         self.addNode(newVirus)
-
-
-    def loadFiles(self):
-        # Load config
-        fs = require("fs")
-        fileNameConfig = self.srcFiles + '/gameserver.ini'
-        ini = require(self.srcFiles + '/modules/ini.js')
-        try:
-            if not fs.existsSync(fileNameConfig):
-                # No config
-                Logger.info("=======Config not found... Generating new config")
-                # Create a new config
-                fs.writeFileSync(fileNameConfig, ini.stringify(self.config), 'utf-8')
-            else:
-                # Load the contents of the config file
-                load = ini.parse(fs.readFileSync(fileNameConfig, 'utf-8'))
-                # Replace all the default config's values with the loaded config's values
-                for key in load:
-                    if self.config.hasOwnProperty(key):
-                        self.config[key] = load[key]
-                    else Logger.error("Unknown gameserver.ini value: " + key)
-
-
-        except err:
-            Logger.error(err.stack)
-            Logger.error("Failed to load " + fileNameConfig + ": " + err.message)
-
-        Logger.setVerbosity(self.config.logVerbosity)
-        Logger.setFileVerbosity(self.config.logFileVerbosity)
-
-        # Load bad words
-        fileNameBadWords = self.srcFiles + '/badwords.txt'
-        try:
-            if not fs.existsSync(fileNameBadWords):
-                Logger.warn(fileNameBadWords + " not found")
-            else:
-                words = fs.readFileSync(fileNameBadWords, 'utf-8')
-                words = words.split(/[\r\n]+/)
-                words = words.map(function (arg) {
-                    return " " + arg.trim().toLowerCase() + " " # Formatting
-                })
-                words = words.filter(function (arg) {
-                    return arg.length > 2
-                })
-                self.badWords = words
-                Logger.info(self.badWords.length + " bad words loaded")
-            }
-        except err:
-            Logger.error(err.stack)
-            Logger.error("Failed to load " + fileNameBadWords + ": " + err.message)
-
-        # Load user list
-        UserRoleEnum = require(self.srcFiles + '/enum/UserRoleEnum')
-        fileNameUsers = self.srcFiles + '/enum/userRoles.json'
-        tryL
-            self.userList = []
-            if not fs.existsSync(fileNameUsers):
-                Logger.warn(fileNameUsers + " is missing.")
-                return
-
-            usersJson = fs.readFileSync(fileNameUsers, 'utf-8')
-            list = JSON.parse(usersJson.trim())
-            i = 0
-            while i < list.length:
-                item = list[i]
-                if (not item.hasOwnProperty("ip") or not item.hasOwnProperty("password") or not item.hasOwnProperty("role") or item.hasOwnProperty("name")):
-                    list.pop(i)
-                    continue
-
-                if not item.password or not item.password.trim():
-                    Logger.warn("User account \"" + item.name + "\" disabled")
-                    list.pop(i)
-                    continue
-
-                if item.ip:
-                    item.ip = item.ip.trim()
-                item.password = item.password.trim()
-                if not UserRoleEnum.hasOwnProperty(item.role):
-                    Logger.warn("Unknown user role: " + item.role)
-                    item.role = UserRoleEnum.USER
-                else:
-                    item.role = UserRoleEnum[item.role]
-
-                item.name = (item.name or "").trim()
-                i+=1
-
-            self.userList = list
-            Logger.info(self.userList.length + " user records loaded.")
-        except err:
-            Logger.error(err.stack)
-            Logger.error("Failed to load " + fileNameUsers + ": " + err.message)
-
-
-        # Load ip ban list
-        fileNameIpBan = self.srcFiles + '/ipbanlist.txt'
-        try:
-            if fs.existsSync(fileNameIpBan):
-                # Load and input the contents of the ipbanlist file
-                self.ipBanList = fs.readFileSync(fileNameIpBan, "utf8").split(/[\r\n]+/).filter(function (x) {
-                    return x != '' # filter empty lines
-                })
-                Logger.info(self.ipBanList.length + " IP ban records loaded.")
-            else:
-                Logger.warn(fileNameIpBan + " is missing.")
-
-        except err:
-            Logger.error(err.stack)
-            Logger.error("Failed to load " + fileNameIpBan + ": " + err.message)
-
-        # Convert config settings
-        self.config.serverRestart = 1e999 if self.config.serverRestart == 0 else self.config.serverRestart * 1500
-

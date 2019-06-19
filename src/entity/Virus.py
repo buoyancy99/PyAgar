@@ -1,7 +1,8 @@
 from .Cell import Cell
 import math
 import random
-import numpy as np
+from ..abstraction import *
+from ..modules import *
 
 class Virus(Cell):
     def __init__(self, gameServer, owner, position, size):
@@ -9,7 +10,7 @@ class Virus(Cell):
         self.cellType = 2
         self.isSpiked = True
         self.isMotherCell = False
-        self.color = np.array([51, 255, 51])
+        self.color = Color(51, 255, 51)
 
     def canEat(self, cell):
         if len(self.gameServer.nodeVirus) < self.gameServer.config.virusMaxAmount:
