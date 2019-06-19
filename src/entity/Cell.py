@@ -58,13 +58,13 @@ class Cell:
         r = self.size / 2
         if self.position.x < border.minx + r or self.position.x > border.maxx - r:
             self.boostDirection.scale(-1, 1);
-            self.position.x = math.max(self.position.x, border.minx + r);
+            self.position.x = max(self.position.x, border.minx + r);
             self.position.x = math.min(self.position.x, border.maxx - r);
 
         if self.position.y < border.miny + r or self.position.y > border.maxy - r:
             self.boostDirection.scale(1, -1);
-            self.position.y = math.max(self.position.y, border.miny + r);
-            self.position.y = math.min(self.position.y, border.maxy - r);
+            self.position.y = max(self.position.y, border.miny + r);
+            self.position.y = min(self.position.y, border.maxy - r);
 
 
     def onEaten(self):

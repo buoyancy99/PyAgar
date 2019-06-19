@@ -47,7 +47,7 @@ class QuadNode:
     def remove(self, item):
         if item._quadNode is not self:
             return item._quadNode.remove(item)
-        self.items.splice(self.items.indexOf(item), 1)
+        self.items.remove(item)
         item._quadNode = None
 
     def find(self, bound, callback):

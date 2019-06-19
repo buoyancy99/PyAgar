@@ -7,6 +7,9 @@ class Vec2:
         self.x = x
         self.y = y
 
+    def __repr__(self):
+        return '(' + str(self.x) + ',' + str(self.y) + ')'
+
 
     def add(self, d, m):
         self.x += d.x * m

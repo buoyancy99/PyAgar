@@ -17,6 +17,9 @@ class Player:
         self.score = 0
         self.isRemoved = False
         self.spawnmass = 0
+        self.rec = False
+        self.mergeOverride = False
+        self.lastEject = None
         if gameServer:
             gameServer.lastPlayerId += 1
             self.pID = gameServer.lastPlayerId
@@ -46,8 +49,8 @@ class Player:
             self.centerPos.y + halfHeight)
 
         self.viewNodes = []
-        self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.push(check))
-        self.viewNodes = sorted(self.viewNodes, lambda x: x.nodeId)
+        self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
+        self.viewNodes = sorted(self.viewNodes, key=lambda x: x.nodeId)
 
     def updateSpecView(self):
         cx = 0

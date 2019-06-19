@@ -11,9 +11,11 @@ class PlayerCell(Cell):
         return True
 
     def getSpeed(self, dist):
+        if dist == 0:
+            return 0
         speed = 2.2 * math.pow(self.size, -0.439)
         speed *= 40 * self.gameServer.config.playerSpeed
-        return math.min(dist, speed) / dist
+        return min(dist, speed) / dist
 
     def onAdd(self, gameServer):
         self.color = self.owner.color

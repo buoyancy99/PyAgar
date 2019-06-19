@@ -172,9 +172,7 @@ class GameServer:
                 if ((self.tickCounter + 3) % 25) == 0:
                     self.updateSizeDecay(cell)
                 # Remove external minions if necessary
-                if cell.owner.isMinion:
-                    cell.owner.socket.close(1000, "Minion")
-                    self.removeNode(cell)
+
 
             for m in eatCollisions:
                 self.resolveCollision(m)
@@ -192,9 +190,6 @@ class GameServer:
 
     # update remerge first
     def movePlayer(self, cell, player):
-        if not player.socket.isConnected or player.frozen or not player.mouse:
-            return  # Do not move
-
         # get movement from vector
         d = player.mouse.clone().sub(cell.position)
         move = cell.getSpeed(d.sqDist())  # movement speed
@@ -203,15 +198,15 @@ class GameServer:
         cell.position.add(d, move)
 
         # update remerge
-        time = self.config.playerRecombineTime,
+        time = self.config.playerRecombineTime
         base = max(time, cell.size * 0.2) * 25
         # instant merging conditions
         if not time or player.rec or player.mergeOverride:
-            cell._canRemerge = cell.boostDistance < 100
+            cell.canRemerge = cell.boostDistance < 100
             return  # instant merge
 
         # regular remerge time
-        cell._canRemerge = cell.getAge() >= base
+        cell.canRemerge = cell.getAge() >= base
 
     # decay player cells
     def updateSizeDecay(self, cell):

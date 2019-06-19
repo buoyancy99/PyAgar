@@ -3,11 +3,12 @@ from players import Player
 import numpy as np
 
 server = GameServer()
-server.start()
-players = [Player(server) for i in range(30)]
+server.start(0)
+players = [Player(server) for i in range(60)]
 server.addPlayers(players)
 
-for i in range(2):
+action = np.array([1,1,1,0,1])
+for i in range(10):
     server.Update()
     for player in players:
-        player.step(np.ones(5))
+        player.step(action)

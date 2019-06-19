@@ -1,6 +1,6 @@
 from Mode import Mode
 
-def FFA():
+class FFA(Mode):
     def __init__(self):
         Mode.__init__(self)
         self.ID = 0
