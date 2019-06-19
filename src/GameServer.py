@@ -1,11 +1,12 @@
 import math
 from Config import Config
 import random
-from datetime import datetime
 from modules import *
 from entity import *
+from gamemodes import *
 
 
+# noinspection PyAttributeOutsideInit
 class GameServer:
     def __init__(self):
 
@@ -20,21 +21,17 @@ class GameServer:
         self.clients = []
         self.socketCount = 0
         self.largestClient = None
-        self.nodes = [] # Total nodes
-        self.nodesVirus = [] # Virus nodes
-        self.nodesFood = [] # Food nodes
-        self.nodesEjected = [] # Ejected nodes
-        self.nodesPlayer = [] # Player nodes
+        self.nodes = []  # Total nodes
+        self.nodesVirus = []  # Virus nodes
+        self.nodesFood = []  # Food nodes
+        self.nodesEjected = []  # Ejected nodes
+        self.nodesPlayer = []  # Player nodes
 
-        self.movingNodes = [] # For move engine
-        self.leaderboard = [] # For leaderboard
-        self.leaderboardType = -1 # No type
-
-        BotLoader = require('./ai/BotLoader')
-        self.bots = new BotLoader(self)
+        self.movingNodes = []  # For move engine
+        self.leaderboard = []  # For leaderboard
+        self.leaderboardType = -1  # No type
 
         # Main loop tick
-        self.startTime = Date.now()
         self.stepDateTime = 0
         self.timeStamp = 0
         self.updateTime = 0
@@ -47,63 +44,19 @@ class GameServer:
         # Config
         self.config = Config()
 
-
         self.ipBanList = []
         self.minionTest = []
         self.userList = []
         self.badWords = []
-        self.loadFiles()
 
         # Set border, quad-tree
         self.setBorder(self.config.borderWidth, self.config.borderHeight)
         self.quadTree = QuadNode(self.border)
 
-
-    def start(self):
-        self.timerLoopBind = self.timerLoop.bind(self)
-        self.mainLoopBind = self.mainLoop.bind(self)
-
+    def start(self, gamemode=1):
         # Set up gamemode(s)
-        Gamemode = require('./gamemodes')
-        self.gameMode = Gamemode.get(self.config.serverGamemode)
+        self.gameMode = Get_Game_Mode(gamemode)
         self.gameMode.onServerInit(self)
-
-        # Client Binding
-        bind = self.config.clientBind + ""
-        self.clientBind = bind.split(' - ')
-
-        # Start the server
-        self.httpServer = http.createServer()
-        wsOptions = {
-            server: self.httpServer,
-            perMessageDeflate: False,
-            maxPayload: 4096
-        }
-        Logger.info("WebSocket: " + self.config.serverWsModule)
-        self.WebSocket = require(self.config.serverWsModule)
-        self.wsServer = self.WebSocket.Server(wsOptions)
-        self.wsServer.on('error', self.onServerSocketError.bind(self))
-        self.wsServer.on('connection', self.onClientSocketOpen.bind(self))
-        self.httpServer.listen(self.config.serverPort, self.config.serverBind, self.onHttpServerOpen.bind(self))
-
-        # Start stats port (if needed)
-        if self.config.serverStatsPort > 0:
-            self.startStatsServer(self.config.serverStatsPort)
-
-    def onHttpServerOpen(self):
-        # Start Main Loop
-        setTimeout(self.timerLoopBind, 1)
-
-        # Done
-        Logger.info("Listening on port " + self.config.serverPort)
-        Logger.info("Current game mode is " + self.gameMode.name)
-
-        # Player bots (Experimental)
-        if self.config.serverBots:
-            for i in range(self.config.serverBots):
-                self.bots.addBot()
-            Logger.info("Added " + self.config.serverBots + " player bots")
-
 
     def addNode(self, node):
         # Add to quad-tree & node list
@@ -116,140 +69,17 @@ class GameServer:
         # Special on-add actions
         node.onAdd(self)
 
-    def onServerSocketError(self, error):
-        Logger.error("WebSocket: " + error.code + " - " + error.message)
-        switch (error.code) {
-            case "EADDRINUSE":
-                Logger.error("Server could not bind to port " + self.config.serverPort + "!")
-                Logger.error("Please close out of Skype or change 'serverPort' in gameserver.ini to a different number.")
-                break
-            case "EACCES":
-                Logger.error("Please make sure you are running MultiOgar-Edited with root privileges.")
-                break
-        }
-        process.exit(1) # Exits the program
-
-
-        def onClientSocketOpen(self, ws, req):
-            req = req or ws.upgradeReq
-            logip = ws._socket.remoteAddress + ":" + ws._socket.remotePort
-            ws.on('error', function (err) {
-                Logger.writeError("[" + logip + "] " + err.stack)
-            })
-
-            if self.config.serverMaxConnections and self.socketCount >= self.config.serverMaxConnections:
-                ws.close(1000, "No slots")
-                return
-
-            if self.checkIpBan(ws._socket.remoteAddress):
-                ws.close(1000, "IP banned")
-                return
-
-            if self.config.serverIpLimit:
-                ipConnections = 0
-                for i in range(self.clients.length):
-                    socket = self.clients[i]
-                    if not socket.isConnected or socket.remoteAddress != ws._socket.remoteAddress:
-                        continue
-                    ipConnections+=1
-
-                if ipConnections >= self.config.serverIpLimit:
-                    ws.close(1000, "IP limit reached")
-                    return
-
-            if self.config.clientBind.length and req.headers.origin.indexOf(self.clientBind) < 0):
-                ws.close(1000, "Client not allowed")
-                return
-
-            ws.isConnected = True
-            ws.remoteAddress = ws._socket.remoteAddress
-            ws.remotePort = ws._socket.remotePort
-            ws.lastAliveTime = datetime.now()
-            Logger.write("CONNECTED " + ws.remoteAddress + ":" + ws.remotePort + ", origin: \"" + req.headers.origin + "\"")
-
-
-            PlayerTracker = require('./PlayerTracker')
-            ws.playerTracker = new PlayerTracker(self, ws)
-            PacketHandler = require('./PacketHandler')
-            ws.packetHandler = new PacketHandler(self, ws)
-            PlayerCommand = require('./modules/PlayerCommand')
-            ws.playerCommand = new PlayerCommand(self, ws.playerTracker)
-
-            ws.on('message', function (message) {
-                if (self.config.serverWsModule === "uws")
-                    # uws gives ArrayBuffer - convert it to Buffer
-                    message = parseInt(process.version[1]) < 6 ? Buffer.from(message) : Buffer.from
-            message
-
-                if not message.length:
-                    return
-                if message.length > 256:
-                    ws.close(1009, "Spam")
-                    return
-
-                ws.packetHandler.handleMessage(message)
-            })
-            ws.on('error', function (error) {
-                ws.packetHandler.sendPacket(selfdata) {}
-            })
-            ws.on('close', function (reason) {
-                if ws._socket and ws._socket.destroy != null and typeof {
-                    ws._socket.destroy()
-                }
-                self.socketCount--
-                ws.isConnected = False
-                ws.packetHandler.sendPacket(selfdata) {}
-                ws.closeReason = {
-                    reason: ws._closeCode,
-                    message: ws._closeMessage
-                }
-                ws.closeTime = Date.now()
-                Logger.write("DISCONNECTED " + ws.remoteAddress + ":" + ws.remotePort + ", code: " + ws._closeCode +
-                    ", reason: \"" + ws._closeMessage + "\", name: \"" + ws.playerTracker._name + "\"")
-            })
-            self.socketCount++
-            self.clients.append(ws)
-
-            # Check for external minions
-            self.checkMinion(ws, req)
-
-    def checkMinion(self, ws, req):
-        # Check headers (maybe have a config for self?)
-        if not req.headers['user-agent'] or not req.headers['cache-control'] or req.headers['user-agent'].length < 50:
-            ws.playerTracker.isMinion = True
-        # External minion detection
-        if self.config.serverMinionThreshold:
-            if (ws.lastAliveTime - self.startTime) / 1000 >= self.config.serverMinionIgnoreTime:
-                if self.minionTest.length >= self.config.serverMinionThreshold:
-                    ws.playerTracker.isMinion = True
-                    for i in range(self.minionTest.length):
-                        playerTracker = self.minionTest[i]
-                        if not playerTracker.socket.isConnected:
-                            continue
-                        playerTracker.isMinion = True
-                    if self.minionTest.length:
-                        self.minionTest.pop(0)
-                self.minionTest.append(ws.playerTracker)
-
-        # Add server minions if needed
-        if self.config.serverMinions and not ws.playerTracker.isMinion:
-            for i in range(self.config.serverMinions):
-                self.bots.addMinion(ws.playerTracker)
-                ws.playerTracker.minionControl = True
-
-
     def setBorder(self, width, height):
         hw = width // 2
         hh = height // 2
         self.border = Bound(-hw, -hh, hw, hh)
 
-
+    @staticmethod
     def getRandomColor():
         colorRGB = [0xff, 0x07, random.randint(256) // 2]
         random.shuffle(colorRGB)
         # return random
         return Color(*colorRGB)
-
 
     def removeNode(self, node):
         # Remove from quad-tree
@@ -273,7 +103,7 @@ class GameServer:
         i = 0
         while i < len(self.clients):
             if not self.clients[i]:
-                i+=1
+                i += 1
                 continue
 
             self.clients[i].playerTracker.checkConnection()
@@ -281,7 +111,7 @@ class GameServer:
                 # remove dead client
                 self.clients.pop(i)
             else:
-                i+=1
+                i += 1
         # update
         for client in self.clients:
             if not client:
@@ -293,71 +123,12 @@ class GameServer:
                 continue
             client.playerTracker.sendUpdate()
 
+    def Update(self):
+        skipstep = 1
+        for i in range(skipstep):
+            self.WorldStep()
 
-        # check minions
-        i = 0
-        test = len(self.minionTest)
-        while i < test:
-            if not self.minionTest[i]:
-                i+=1
-                continue
-
-            date = new Date() - self.minionTest[i].connectedTime
-            if date > self.config.serverMinionInterval:
-                self.minionTest.pop(i)
-            else:
-                i+=1
-
-    def timerLoop(self):
-        timeStep = 40 # vanilla: 40
-        ts = datetime.now()
-        dt = ts - self.timeStamp
-        if dt < timeStep - 5:
-            setTimeout(self.timerLoopBind, timeStep - 5)
-            return
-
-        if dt > 120:
-            self.timeStamp = ts - timeStep
-        # update average, calculate next
-        self.updateTimeAvg += 0.5 * (self.updateTime - self.updateTimeAvg)
-        self.timeStamp += timeStep
-        setTimeout(self.mainLoopBind, 0)
-        setTimeout(self.timerLoopBind, 0)
-
-
-    def mainLoop(self):
-        self.stepDateTime = datetime.now()
-        tStart = process.hrtime()
-        self = self
-
-        # Restart
-        if self.tickCounter > self.config.serverRestart:
-            QuadNode = require('./modules/QuadNode.js')
-            self.httpServer = None
-            self.wsServer = None
-            self.run = True
-            self.lastNodeId = 1
-            self.lastPlayerId = 1
-            for client in self.clients:
-                client.close()
-
-            self.nodes = []
-            self.nodesVirus = []
-            self.nodesFood = []
-            self.nodesEjected = []
-            self.nodesPlayer = []
-            self.movingNodes = []
-            if self.config.serverBots:
-                for i in range(self.config.serverBots):
-                    self.bots.addBot()
-                Logger.info("Added " + self.config.serverBots + " player bots")
-
-            self.tickCounter = 0
-            self.startTime = datetime.now()
-            self.setBorder(self.config.borderWidth, self.config.borderHeight)
-            self.quadTree = QuadNode(self.border, 64, 32)
-
-
+    def WorldStep(self):
         # Loop main functions
         if self.run:
             # Move moving nodes first
@@ -366,12 +137,13 @@ class GameServer:
                     return
                 # Scan and check for ejected mass / virus collisions
                 self.boostCell(cell)
+
                 def callback_fun(check):
-                    m = self.checkCellCollision(cell, check)
+                    collision = self.checkCellCollision(cell, check)
                     if cell.cellType == 3 and check.cellType == 3 and not self.config.mobilePhysics:
-                        self.resolveRigidCollision(m)
+                        self.resolveRigidCollision(collision)
                     else:
-                        self.resolveCollision(m)
+                        self.resolveCollision(collision)
 
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
                 if not cell.isMoving:
@@ -382,13 +154,14 @@ class GameServer:
             for cell in self.nodesPlayer:
                 if cell.isRemoved:
                     return
+
                 # Scan for eat/rigid collisions and resolve them
                 def callback_fun(check):
-                    m = self.checkCellCollision(cell, check)
-                    if self.checkRigidCollision(m):
-                        self.resolveRigidCollision(m)
+                    collision = self.checkCellCollision(cell, check)
+                    if self.checkRigidCollision(collision):
+                        self.resolveRigidCollision(collision)
                     elif check != cell:
-                        eatCollisions.insert(0, m)
+                        eatCollisions.insert(0, collision)
 
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
                 self.movePlayer(cell, cell.owner)
@@ -410,36 +183,22 @@ class GameServer:
                 self.spawnCells()
 
             self.gameMode.onTick(self)
-            self.tickCounter+=1
-
+            self.tickCounter += 1
 
         if not self.run and self.gameMode.IsTournament:
-            self.tickCounter+=1
+            self.tickCounter += 1
         self.updateClients()
 
-        # update leaderboard
-        if ((self.tickCounter + 7) % 25) == 0:
-            self.updateLeaderboard() # once per second
-
-        # ping server tracker
-        if self.config.serverTracker and (self.tickCounter % 750) == 0:
-            self.pingServerTracker() # once per 30 seconds
-
-        # update-update time
-        tEnd = process.hrtime(tStart)
-        self.updateTime = tEnd[0] * 1e3 + tEnd[1] / 1e6
-
-
-# update remerge first
+    # update remerge first
     def movePlayer(self, cell, client):
-        if client.socket.isConnected == False or client.frozen or not client.mouse:
-            return # Do not move
+        if not client.socket.isConnected or client.frozen or not client.mouse:
+            return  # Do not move
 
         # get movement from vector
         d = client.mouse.clone().sub(cell.position)
-        move = cell.getSpeed(d.sqDist()) # movement speed
+        move = cell.getSpeed(d.sqDist())  # movement speed
         if not move:
-            return # avoid jittering
+            return  # avoid jittering
         cell.position.add(d, move)
 
         # update remerge
@@ -448,13 +207,12 @@ class GameServer:
         # instant merging conditions
         if not time or client.rec or client.mergeOverride:
             cell._canRemerge = cell.boostDistance < 100
-            return # instant merge
+            return  # instant merge
 
         # regular remerge time
         cell._canRemerge = cell.getAge() >= base
 
-
-# decay player cells
+    # decay player cells
     def updateSizeDecay(self, cell):
         rate = self.config.playerDecayRate
         cap = self.config.playerDecayCap
@@ -468,15 +226,14 @@ class GameServer:
         decay = 1 - rate * self.gameMode.decayMod
         cell.setSize(math.sqrt(cell.radius * decay))
 
-
     def boostCell(self, cell):
         if cell.isMoving and not cell.boostDistance or cell.isRemoved:
             cell.boostDistance = 0
             cell.isMoving = False
             return
         # decay boost-speed from distance
-        speed = cell.boostDistance / 9 # val: 87
-        cell.boostDistance -= speed # decays from speed
+        speed = cell.boostDistance / 9  # val: 87
+        cell.boostDistance -= speed  # decays from speed
         cell.position.add(cell.boostDirection, speed)
 
         # update boundries
@@ -486,7 +243,7 @@ class GameServer:
     def autoSplit(self, cell, client):
         # get size limit based off of rec mode
         if client.rec:
-            maxSize = 1e9 # increase limit for rec (1 bil)
+            maxSize = 1e9  # increase limit for rec (1 bil)
         else:
             maxSize = self.config.playerMaxSize
 
@@ -501,8 +258,6 @@ class GameServer:
             angle = random.random() * 2 * math.pi
             self.splitPlayerCell(client, cell, angle, cell.mass * .5)
 
-
-
     def updateNodeQuad(self, node):
         # update quad tree
         item = node.quadItem.bound
@@ -513,15 +268,14 @@ class GameServer:
         self.quadTree.remove(node.quadItem)
         self.quadTree.insert(node.quadItem)
 
-
-# Checks cells for collision
+    # Checks cells for collision
+    @staticmethod
     def checkCellCollision(cell, check):
         p = check.position.clone().sub(cell.position)
-    # create collision manifold
+        # create collision manifold
         return Collision(cell, check, p.sqDist(), p)
 
-
-# Checks if collision is rigid body collision
+    # Checks if collision is rigid body collision
     def checkRigidCollision(self, m):
         if not m.cell.owner or not m.check.owner:
             return False
@@ -536,16 +290,16 @@ class GameServer:
 
         r = 1 if self.config.mobilePhysics else 13
         if m.cell.getAge() < r or m.check.getAge() < r:
-            return False # just splited => ignore
+            return False  # just splited => ignore
 
         return not m.cell.canRemerge or not m.check.canRemerge
 
-
-# Resolves rigid body collisions
+    # Resolves rigid body collisions
+    @staticmethod
     def resolveRigidCollision(m):
         push = (m.cell.size + m.check.size - m.d) / m.d
         if push <= 0 or m.d == 0:
-            return # do not extrude
+            return  # do not extrude
 
         # body impulse
         rt = m.cell.radius + m.check.radius
@@ -556,8 +310,7 @@ class GameServer:
         m.cell.position.sub2(m.p, r2)
         m.check.position.add(m.p, r1)
 
-
-# Resolves non-rigid body collision
+    # Resolves non-rigid body collision
     def resolveCollision(self, m):
         cell = m.cell
         check = m.check
@@ -572,15 +325,14 @@ class GameServer:
         # check eating distance
         check.div = 20 if self.config.mobilePhysics else 3
         if m.d >= check.size - cell.size / check.div:
-            return # too far => can't eat
-
+            return  # too far => can't eat
 
         # collision owned => ignore, resolve, or remerge
         if cell.owner and cell.owner == check.owner:
             if cell.getAge() < 13 or check.getAge() < 13:
-                return # just splited => ignore
+                return  # just splited => ignore
         elif check.size < cell.size * 1.15 or not check.canEat(cell):
-            return # Cannot eat or cell refuses to be eaten
+            return  # Cannot eat or cell refuses to be eaten
 
         # Consume effect
         check.onEat(cell)
@@ -590,8 +342,7 @@ class GameServer:
         # Remove cell
         self.removeNode(cell)
 
-
-    def plitPlayerCell(self, client, parent, angle, mass):
+    def splitPlayerCell(self, client, parent, angle, mass):
         size = math.sqrt(mass * 100)
         size1 = math.sqrt(parent.radius - size * size)
 
@@ -607,9 +358,9 @@ class GameServer:
         newCell.setBoost(self.config.splitVelocity * math.pow(size, 0.0122), angle)
         self.addNode(newCell)
 
-
     def randomPos(self):
-        return Vec2(self.border.minx + self.border.width * random.random(), self.border.miny + self.border.height * random.random())
+        return Vec2(self.border.minx + self.border.width * random.random(),
+                    self.border.miny + self.border.height * random.random())
 
     def spawnCells(self):
         # spawn food at random size
@@ -630,7 +381,6 @@ class GameServer:
             if not self.willCollide(virus):
                 self.addNode(virus)
 
-
     def spawnPlayer(self, player, pos):
         if self.disableSpawn:
             return
@@ -642,7 +392,7 @@ class GameServer:
 
         # Check if can spawn from ejected mass
         index = math.floor(len(self.nodesEjected) * random.random())
-        eject = self.nodesEjected[index] # Randomly selected
+        eject = self.nodesEjected[index]  # Randomly selected
         if random.random() <= self.config.ejectSpawnPercent and eject and eject.boostDistance < 1:
             # Spawn from ejected mass
             pos = eject.position.clone()
@@ -652,15 +402,14 @@ class GameServer:
         # Spawn player safely (do not check minions)
         cell = PlayerCell(self, player, pos, size)
         if self.willCollide(cell) and not player.isMi:
-            pos = self.randomPos() # Not safe => retry
+            pos = self.randomPos()  # Not safe => retry
         self.addNode(cell)
 
         # Set initial mouse coords
         player.mouse = pos
 
-
     def willCollide(self, cell):
-        notSafe = False # Safe by default
+        notSafe = False  # Safe by default
         sqSize = cell.radius
         pos = self.randomPos()
         d = cell.position.clone().sub(pos)
@@ -672,10 +421,10 @@ class GameServer:
             if n.cellType == 0:
                 notSafe = True
 
-        self.quadTree.find(Bound(cell.position.x - cell.size, cell.position.y - cell.size, cell.position.x + cell.size, cell.position.y + cell.size), callback_fun)
+        self.quadTree.find(Bound(cell.position.x - cell.size, cell.position.y - cell.size, cell.position.x + cell.size,
+                                 cell.position.y + cell.size), callback_fun)
 
         return notSafe
-
 
     def splitCells(self, client):
         # Split cell order decided by cell age
@@ -701,7 +450,6 @@ class GameServer:
             # Now split player cells
             self.splitPlayerCell(client, cell, d.angle(), cell.mass * .5)
 
-
     def canEjectMass(self, client):
         if client.lastEject is None:
             # first eject
@@ -721,7 +469,7 @@ class GameServer:
             return
         for cell in client.cells:
             if cell.size < self.config.playerMinEjectSize:
-                continue # Too small to eject
+                continue  # Too small to eject
 
             d = client.mouse.clone().sub(cell.position)
             sq = d.sqDist()
@@ -746,8 +494,6 @@ class GameServer:
             ejected.color = cell.color
             ejected.setBoost(self.config.ejectVelocity, angle)
             self.addNode(ejected)
-
-
 
     def shootVirus(self, parent, angle):
         # Create virus and add it to node list

@@ -17,6 +17,7 @@ class Cell:
         self.isMoving = False
         self.boostDistance = 0
         self.boostDirection = Vec2(1, 0)
+        self.quadItem = None
 
         if self.gameServer:
             self.tickOfBirth = self.gameServer.tickCounter
