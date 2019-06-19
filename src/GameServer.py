@@ -9,7 +9,6 @@ from gamemodes import *
 # noinspection PyAttributeOutsideInit
 class GameServer:
     def __init__(self):
-
         self.srcFiles = "../src"
 
         # Startup
@@ -18,9 +17,9 @@ class GameServer:
         self.httpServer = None
         self.lastNodeId = 1
         self.lastPlayerId = 1
-        self.clients = []
+        self.players = []
         self.socketCount = 0
-        self.largestClient = None
+        self.largestPlayer = None
         self.nodes = []  # Total nodes
         self.nodesVirus = []  # Virus nodes
         self.nodesFood = []  # Food nodes
@@ -53,10 +52,11 @@ class GameServer:
         self.setBorder(self.config.borderWidth, self.config.borderHeight)
         self.quadTree = QuadNode(self.border)
 
-    def start(self, gamemode=1):
+    def start(self, players, gamemode=1):
         # Set up gamemode(s)
         self.gameMode = Get_Game_Mode(gamemode)
         self.gameMode.onServerInit(self)
+        self.players = players
 
     def addNode(self, node):
         # Add to quad-tree & node list
@@ -98,30 +98,30 @@ class GameServer:
         # Special on-remove actions
         node.onRemove(self)
 
-    def updateClients(self):
-        # check dead clients
+    def updatePlayers(self):
+        # check dead players
         i = 0
-        while i < len(self.clients):
-            if not self.clients[i]:
+        while i < len(self.players):
+            if not self.players[i]:
                 i += 1
                 continue
 
-            self.clients[i].playerTracker.checkConnection()
-            if self.clients[i].playerTracker.isRemoved:
-                # remove dead client
-                self.clients.pop(i)
+            self.players[i].playerTracker.checkConnection()
+            if self.players[i].playerTracker.isRemoved:
+                # remove dead player
+                self.players.pop(i)
             else:
                 i += 1
         # update
-        for client in self.clients:
-            if not client:
+        for player in self.players:
+            if not player:
                 continue
-            client.playerTracker.updateTick()
+            player.playerTracker.updateTick()
 
-        for client in self.clients:
-            if not client:
+        for player in self.players:
+            if not player:
                 continue
-            client.playerTracker.sendUpdate()
+            player.playerTracker.sendUpdate()
 
     def Update(self):
         skipstep = 1
@@ -187,15 +187,15 @@ class GameServer:
 
         if not self.run and self.gameMode.IsTournament:
             self.tickCounter += 1
-        self.updateClients()
+        self.updatePlayers()
 
     # update remerge first
-    def movePlayer(self, cell, client):
-        if not client.socket.isConnected or client.frozen or not client.mouse:
+    def movePlayer(self, cell, player):
+        if not player.socket.isConnected or player.frozen or not player.mouse:
             return  # Do not move
 
         # get movement from vector
-        d = client.mouse.clone().sub(cell.position)
+        d = player.mouse.clone().sub(cell.position)
         move = cell.getSpeed(d.sqDist())  # movement speed
         if not move:
             return  # avoid jittering
@@ -205,7 +205,7 @@ class GameServer:
         time = self.config.playerRecombineTime,
         base = max(time, cell.size * 0.2) * 25
         # instant merging conditions
-        if not time or client.rec or client.mergeOverride:
+        if not time or player.rec or player.mergeOverride:
             cell._canRemerge = cell.boostDistance < 100
             return  # instant merge
 
@@ -240,23 +240,23 @@ class GameServer:
         cell.checkBorder(self.border)
         self.updateNodeQuad(cell)
 
-    def autoSplit(self, cell, client):
+    def autoSplit(self, cell, player):
         # get size limit based off of rec mode
-        if client.rec:
+        if player.rec:
             maxSize = 1e9  # increase limit for rec (1 bil)
         else:
             maxSize = self.config.playerMaxSize
 
         # check size limit
-        if client.mergeOverride or cell.size < maxSize:
+        if player.mergeOverride or cell.size < maxSize:
             return
-        if len(client.cells) >= self.config.playerMaxCells or self.config.mobilePhysics:
+        if len(player.cells) >= self.config.playerMaxCells or self.config.mobilePhysics:
             # cannot split => just limit
             cell.setSize(maxSize)
         else:
             # split in random direction
             angle = random.random() * 2 * math.pi
-            self.splitPlayerCell(client, cell, angle, cell.mass * .5)
+            self.splitPlayerCell(player, cell, angle, cell.mass * .5)
 
     def updateNodeQuad(self, node):
         # update quad tree
@@ -342,7 +342,7 @@ class GameServer:
         # Remove cell
         self.removeNode(cell)
 
-    def splitPlayerCell(self, client, parent, angle, mass):
+    def splitPlayerCell(self, player, parent, angle, mass):
         size = math.sqrt(mass * 100)
         size1 = math.sqrt(parent.radius - size * size)
 
@@ -354,7 +354,7 @@ class GameServer:
         parent.setSize(size1)
 
         # Create cell and add it to node list
-        newCell = PlayerCell(self, client, parent.position, size)
+        newCell = PlayerCell(self, player, parent.position, size)
         newCell.setBoost(self.config.splitVelocity * math.pow(size, 0.0122), angle)
         self.addNode(newCell)
 
@@ -426,12 +426,12 @@ class GameServer:
 
         return notSafe
 
-    def splitCells(self, client):
+    def splitCells(self, player):
         # Split cell order decided by cell age
-        cellToSplit = [cell for cell in client.cells]
+        cellToSplit = [cell for cell in player.cells]
 
         for cell in cellToSplit:
-            d = client.mouse.clone().sub(cell.position)
+            d = player.mouse.clone().sub(cell.position)
             if d.dist() < 1:
                 d.x = 1
                 d.y = 0
@@ -440,38 +440,38 @@ class GameServer:
                 return  # cannot split
 
             # Get maximum cells for rec mode
-            if client.rec:
+            if player.rec:
                 max_cell_rec = 200  # rec limit
             else:
                 max_cell_rec = self.config.playerMaxCells
-            if len(client.cells) >= max_cell_rec:
+            if len(player.cells) >= max_cell_rec:
                 return
 
             # Now split player cells
-            self.splitPlayerCell(client, cell, d.angle(), cell.mass * .5)
+            self.splitPlayerCell(player, cell, d.angle(), cell.mass * .5)
 
-    def canEjectMass(self, client):
-        if client.lastEject is None:
+    def canEjectMass(self, player):
+        if player.lastEject is None:
             # first eject
-            client.lastEject = self.tickCounter
+            player.lastEject = self.tickCounter
             return True
 
-        dt = self.tickCounter - client.lastEject
+        dt = self.tickCounter - player.lastEject
         if dt < self.config.ejectCooldown:
             # reject (cooldown)
             return False
 
-        client.lastEject = self.tickCounter
+        player.lastEject = self.tickCounter
         return True
 
-    def ejectMass(self, client):
-        if not self.canEjectMass(client) or client.frozen:
+    def ejectMass(self, player):
+        if not self.canEjectMass(player) or player.frozen:
             return
-        for cell in client.cells:
+        for cell in player.cells:
             if cell.size < self.config.playerMinEjectSize:
                 continue  # Too small to eject
 
-            d = client.mouse.clone().sub(cell.position)
+            d = player.mouse.clone().sub(cell.position)
             sq = d.sqDist()
             d.x = d.x / sq if sq > 1 else 1
             d.y = d.y / sq if sq > 1 else 0

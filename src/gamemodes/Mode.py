@@ -26,7 +26,7 @@ class Mode():
 
     def onPlayerSpawn(self, gameServer, player):
         # Called when a player is spawned
-        player.color = gameServer.getRandomColor(); # Random color
+        player.color = gameServer.getRandomColor() # Random color
         gameServer.spawnPlayer(player, gameServer.randomPos())
 
 
