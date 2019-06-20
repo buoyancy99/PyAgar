@@ -34,7 +34,8 @@ class Player:
             print('gg')
             return
         # action in format [0] mouse x, [1 mouse y, [2] key space bool, [3] key w bool, [4] no key bool
-        self.mouse = self.centerPos.add(Vec2(action[0], action[1]), 800)
+        assert action[0] >= -0.5 and action[0] <= 0.5 and action[1] >= -0.5 and action[1] <= 0.5
+        self.mouse = self.centerPos.add(Vec2(action[0] * self.gameServer.config.serverViewBaseX, action[1] * self.gameServer.config.serverViewBaseY), 1)
         # assert np.sum(action[2:]) == 1
         if action[2] == 1:
             self.pressSpace()

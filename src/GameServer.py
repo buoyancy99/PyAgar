@@ -336,8 +336,6 @@ class GameServer:
         cell.killedBy = check
 
         # Remove cell
-        if check.owner.pID==0:
-            print('removed! by', check.owner.pID)
         self.removeNode(cell)
 
     def splitPlayerCell(self, player, parent, angle, mass):

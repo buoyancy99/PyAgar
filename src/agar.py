@@ -15,7 +15,7 @@ class AgarEnv(gym.Env):
     def step(self, actions):
         for action, player in zip(actions, self.players):
             player.step(action)
-
+        print(len(self.players[0].cells))
         self.server.Update()
 
     def reset(self, num_players = 20, gamemode = 0):
