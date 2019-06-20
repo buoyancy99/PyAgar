@@ -18,6 +18,9 @@ class Color():
         self.g = g
         self.b = b
 
+    def __repr__(self):
+        return '[' + str(self.r) + ',' + str(self.g) + ',' + str(self.b) + ']'
+
 class Collision():
     def __init__(self, cell, check, d, p):
         self.cell = cell

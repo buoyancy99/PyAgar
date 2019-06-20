@@ -25,14 +25,16 @@ class Player:
             self.pID = gameServer.lastPlayerId
             gameServer.gameMode.onPlayerInit(self)
             self.joinGame()
+            self.updateView()
 
     def step(self, action):
         if len(self.cells) == 0:
             self.isRemoved = True
         if self.isRemoved:
+            print('gg')
             return
         # action in format [0] mouse x, [1 mouse y, [2] key space bool, [3] key w bool, [4] no key bool
-        self.mouse = Vec2(action[0], action[1])
+        self.mouse = self.centerPos.add(Vec2(action[0], action[1]), 800)
         # assert np.sum(action[2:]) == 1
         if action[2] == 1:
             self.pressSpace()
@@ -41,12 +43,12 @@ class Player:
 
     def updateView(self):
         if self.isRemoved:
-            print('===================gg'
-                  '')
             return
         cx = 0
         cy = 0
         for cell in self.cells:
+            if self.pID==0:
+                print(cell.position.x, cell.position.y)
             cx += cell.position.x / len(self.cells)
             cy += cell.position.y / len(self.cells)
         self.centerPos = Vec2(cx , cy)
@@ -61,6 +63,7 @@ class Player:
 
         self.viewNodes = []
         self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
+        self.viewNodes+=self.cells
         self.viewNodes = sorted(self.viewNodes, key=lambda x: x.nodeId)
 
     def pressSpace(self):

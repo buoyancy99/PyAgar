@@ -218,6 +218,7 @@ class GameServer:
         if cap and cell.mass > cap:
             rate *= 10
         decay = 1 - rate * self.gameMode.decayMod
+        print('updateSizeDecay', math.sqrt(cell.radius * decay), rate*self.gameMode.decayMod)
         cell.setSize(math.sqrt(cell.radius * decay))
 
     def boostCell(self, cell):
@@ -347,6 +348,7 @@ class GameServer:
             return
 
         # Remove size from parent cell
+        print('splitPlayerCell!', size1)
         parent.setSize(size1)
 
         # Create cell and add it to node list
@@ -360,8 +362,9 @@ class GameServer:
 
     def spawnCells(self):
         # spawn food at random size
-        maxCount = self.config.foodMinAmount - len(self.nodesFood)
-        spawnCount = min(maxCount, self.config.foodSpawnAmount)
+        maxCount = self.config.foodMaxAmount - len(self.nodesFood)
+        minCount = self.config.foodMinAmount - len(self.nodesFood)
+        spawnCount = max(min(maxCount, self.config.foodSpawnAmount), minCount)
         for i in range(spawnCount):
             cell = Food(self, None, self.randomPos(), self.config.foodMinSize)
             if self.config.foodMassGrow:
