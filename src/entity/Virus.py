@@ -1,4 +1,4 @@
-from Cell import Cell
+from .Cell import Cell
 import math
 import random
 from modules import *

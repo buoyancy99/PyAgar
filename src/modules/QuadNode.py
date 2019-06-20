@@ -1,4 +1,4 @@
-from GameAbstractions import *
+from .GameAbstractions import *
 
 def disjoint(a, b):
     return b.minx >= a.maxx or b.maxx <= a.minx or b.miny >= a.maxy or b.maxy <= a.miny

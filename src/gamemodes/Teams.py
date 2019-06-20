@@ -1,4 +1,4 @@
-from Mode import Mode
+from .Mode import Mode
 from modules import *
 import random
 import math

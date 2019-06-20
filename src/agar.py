@@ -27,7 +27,7 @@ class AgarEnv(gym.Env):
     def render(self, playeridx, mode = 'human'):
         if self.viewer is None:
             from gym.envs.classic_control import rendering
-        self.viwer = rendering.Viewer(500, 500)
+        self.viwer = rendering.Viewer(1000, 1000)
         self.viwer.set_bounds(*self.players[playeridx].get_view_box())
         for node in self.players[playeridx].viewNodes:
             geom = rendering.make_circle(radius= node.size)
