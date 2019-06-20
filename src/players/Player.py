@@ -19,6 +19,7 @@ class Player:
         self.spawnmass = 0
         self.rec = False
         self.mergeOverride = False
+        self.viewNodes = []
         self.lastEject = None
         if gameServer:
             gameServer.lastPlayerId += 1
@@ -42,6 +43,8 @@ class Player:
             self.pressSpace()
         elif action[3] == 1:
             self.pressW()
+
+        self.updateView()
 
     def updateView(self):
         if self.isRemoved:

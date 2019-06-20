@@ -41,22 +41,24 @@ class AgarEnv(gym.Env):
         # self.viewer.set_bounds(-7000, 7000, -7000, 7000)
 
 
-        for node in self.players[playeridx].cells:
-            print(node.position, node.radius, node.boostDistance)
-            geom = rendering.make_circle(radius= node.radius)
-            geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
-            xform = rendering.Transform()
-            geom.add_attr(xform)
-            xform.set_translation(node.position.x, node.position.y)
-            self.viewer.add_onetime(geom)
+        # for node in self.players[playeridx].cells:
+        #     print(node.position, node.radius, node.boostDistance)
+        #     geom = rendering.make_circle(radius= node.radius)
+        #     geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
+        #     xform = rendering.Transform()
+        #     geom.add_attr(xform)
+        #     xform.set_translation(node.position.x, node.position.y)
+        #     self.viewer.add_onetime(geom)
 
-        for node in self.players[playeridx].viewNodes:
-            geom = rendering.make_circle(radius= node.radius)
-            geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
-            xform = rendering.Transform()
-            geom.add_attr(xform)
-            xform.set_translation(node.position.x, node.position.y)
-            self.viewer.add_onetime(geom)
+        for node in self.server.nodes:
+        # for node in self.players[playeridx].viewNodes:
+            if not node.isRemoved:
+                geom = rendering.make_circle(radius= node.radius)
+                geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
+                xform = rendering.Transform()
+                geom.add_attr(xform)
+                xform.set_translation(node.position.x, node.position.y)
+                self.viewer.add_onetime(geom)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
