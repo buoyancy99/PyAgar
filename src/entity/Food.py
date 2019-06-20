@@ -5,8 +5,8 @@ class Food(Cell):
         self.cellType = 1
 
     def onAdd(self, gameServer):
-        gameServer.nodesEjected.append(self)
+        gameServer.nodesFood.append(self)
 
     def onRemove(self, gameServer):
-        if self in gameServer.nodesEjected:
-            gameServer.nodesEjected.remove(self)
+        if self in gameServer.nodesFood:
+            gameServer.nodesFood.remove(self)

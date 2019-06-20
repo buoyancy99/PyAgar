@@ -76,8 +76,7 @@ class GameServer:
         hh = height / 2
         self.border = Bound(-hw, -hh, hw, hh)
 
-    @staticmethod
-    def getRandomColor():
+    def getRandomColor(self):
         colorRGB = [0xff, 0x07, random.randint(0, 256)]
         random.shuffle(colorRGB)
         # return random
@@ -137,7 +136,7 @@ class GameServer:
                     return
                 # Scan and check for ejected mass / virus collisions
                 self.boostCell(cell)
-
+                self.updateNodeQuad(cell)
                 def callback_fun(check):
                     collision = self.checkCellCollision(cell, check)
                     if cell.cellType == 3 and check.cellType == 3 and not self.config.mobilePhysics:
@@ -147,25 +146,27 @@ class GameServer:
 
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
                 if not cell.isMoving:
-                    self.movingNodes = None
+                    self.movingNodes = []
 
             # Update players and scan for collisions
             eatCollisions = []
             for cell in self.nodesPlayer:
                 if cell.isRemoved:
-                    return
+                    continue
 
                 # Scan for eat/rigid collisions and resolve them
                 def callback_fun(check):
                     collision = self.checkCellCollision(cell, check)
                     if self.checkRigidCollision(collision):
                         self.resolveRigidCollision(collision)
+
                     elif check != cell:
                         eatCollisions.insert(0, collision)
 
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
                 self.movePlayer(cell, cell.owner)
                 self.boostCell(cell)
+                self.updateNodeQuad(cell)
                 self.autoSplit(cell, cell.owner)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
@@ -194,6 +195,9 @@ class GameServer:
         if not move:
             return  # avoid jittering
         cell.position.add(d, move)
+        # self.updateNodeQuad(cell)
+
+        print('movePlayer', d.sqDist() * move, cell.position)
 
         # update remerge
         time = self.config.playerRecombineTime
@@ -219,9 +223,10 @@ class GameServer:
             rate *= 10
         decay = 1 - rate * self.gameMode.decayMod
         cell.setRadius(math.sqrt(cell.size * decay))
+        # self.updateNodeQuad(cell)
 
     def boostCell(self, cell):
-        if cell.isMoving and not cell.boostDistance or cell.isRemoved:
+        if cell.isMoving and cell.boostDistance < 1 or cell.isRemoved:
             cell.boostDistance = 0
             cell.isMoving = False
             return
@@ -232,7 +237,7 @@ class GameServer:
 
         # update boundries
         cell.checkBorder(self.border)
-        self.updateNodeQuad(cell)
+
 
     def autoSplit(self, cell, player):
         # get radius limit based off of rec mode
@@ -263,8 +268,7 @@ class GameServer:
         self.quadTree.insert(node.quadItem)
 
     # Checks cells for collision
-    @staticmethod
-    def checkCellCollision(cell, check):
+    def checkCellCollision(self, cell, check):
         p = check.position.clone().sub(cell.position)
         # create collision manifold
         return Collision(cell, check, p.sqDist(), p)
@@ -272,6 +276,8 @@ class GameServer:
     # Checks if collision is rigid body collision
     def checkRigidCollision(self, m):
         if not m.cell.owner or not m.check.owner:
+            return False
+        if m.cell == m.check:
             return False
 
         if m.cell.owner != m.check.owner:
@@ -289,10 +295,13 @@ class GameServer:
         return not m.cell.canRemerge or not m.check.canRemerge
 
     # Resolves rigid body collisions
-    @staticmethod
-    def resolveRigidCollision(m):
+
+    def resolveRigidCollision(self, m):
         if m.d == 0:
-            return
+            rand_angle = random.random() * math.pi * 2
+            m.p = Vec2(math.cos(rand_angle) * 1, math.sin(rand_angle) * 1)
+            m.d = 1
+
         push = (m.cell.radius + m.check.radius - m.d) / m.d
         if push <= 0:
             return
@@ -303,8 +312,12 @@ class GameServer:
         r2 = push * m.check.size / rt
 
         # apply extrusion force
+        print('mp', m.check.position, m.cell.position)
         m.cell.position.sub2(m.p, r2)
         m.check.position.add(m.p, r1)
+
+        # print('resolvecollision add', m.p.sqDist() * r1,  m.check.position)
+        # print('resolvecollision sub', m.p.sqDist() * r2, m.cell.position)
 
     # Resolves non-rigid body collision
     def resolveCollision(self, m):
@@ -331,6 +344,7 @@ class GameServer:
             return  # Cannot eat or cell refuses to be eaten
 
         # Consume effect
+        print(cell, 'eaten by', check)
         check.onEat(cell)
         cell.onEaten(check)
         cell.killedBy = check

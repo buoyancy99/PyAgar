@@ -25,7 +25,7 @@ class Cell:
             self.nodeId = self.gameServer.lastNodeId
             self.gameServer.lastNodeId += 1
             self.setRadius(radius)
-            self.position = position
+            self.position = position.clone()
 
     def setRadius(self, radius):
         self.radius = radius
@@ -46,6 +46,7 @@ class Cell:
         self.setRadius(math.sqrt(self.size + prey.size))
 
     def setBoost(self, distance, angle):
+        print('boosting')
         self.boostDistance = distance
         self.boostDirection = Vec2(math.sin(angle), math.cos(angle))
         self.isMoving = True
@@ -74,5 +75,8 @@ class Cell:
 
     def onRemove(self, gameServer):
         return
+
+    def getBound(self):
+        return Bound(self.position.x - self.radius, self.position.y - self.radius, self.position.x + self.radius, self.position.y + self.radius)
 
 

@@ -17,7 +17,8 @@ from agar import AgarEnv
 env = AgarEnv()
 env.seed(0)
 # action = np.random.random(size=(20, 5))
-action = np.zeros((20, 5))
+num_players = 1
+action = np.zeros((num_players, 5))
 
 def update_mouse(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -29,7 +30,7 @@ cv2.namedWindow('touchpad')
 cv2.setMouseCallback('touchpad',update_mouse)
 
 for episode in range(1):
-    env.reset()
+    env.reset(1)
     while True:
         cv2.imshow('touchpad', touchpad)
         k = cv2.waitKey(10) & 0xFF

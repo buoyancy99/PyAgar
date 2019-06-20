@@ -18,7 +18,7 @@ class AgarEnv(gym.Env):
         print(len(self.players[0].cells))
         self.server.Update()
 
-    def reset(self, num_players = 20, gamemode = 0):
+    def reset(self, num_players = 1, gamemode = 0):
         self.server = GameServer()
         self.gamemode = gamemode
         self.num_players = num_players
@@ -33,20 +33,30 @@ class AgarEnv(gym.Env):
         # time.sleep(0.3)
         if self.viewer is None:
             self.viewer = rendering.Viewer(self.server.config.serverViewBaseX, self.server.config.serverViewBaseY)
-        else:
-            self.viewer.geoms = []
-        self.render_border()
+            self.render_border()
+
+
         bound = self.players[playeridx].get_view_box()
         self.viewer.set_bounds(*bound)
+        # self.viewer.set_bounds(-7000, 7000, -7000, 7000)
+
+
+        for node in self.players[playeridx].cells:
+            print(node.position, node.radius, node.boostDistance)
+            geom = rendering.make_circle(radius= node.radius)
+            geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
+            xform = rendering.Transform()
+            geom.add_attr(xform)
+            xform.set_translation(node.position.x, node.position.y)
+            self.viewer.add_onetime(geom)
 
         for node in self.players[playeridx].viewNodes:
             geom = rendering.make_circle(radius= node.radius)
             geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
             xform = rendering.Transform()
-
             geom.add_attr(xform)
             xform.set_translation(node.position.x, node.position.y)
-            self.viewer.add_geom(geom)
+            self.viewer.add_onetime(geom)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
@@ -57,7 +67,7 @@ class AgarEnv(gym.Env):
         map_bottom = self.server.config.borderHeight / 2
         line_top = rendering.Line((map_left, map_top), (map_right, map_top))
         line_top.set_color(0, 0, 0)
-        self.viewer.add_geom(line_top)
+        self.viewer.add_onetime(line_top)
         line_bottom = rendering.Line((map_left, map_bottom), (map_right, map_bottom))
         line_bottom.set_color(0, 0, 0)
         self.viewer.add_geom(line_bottom)
