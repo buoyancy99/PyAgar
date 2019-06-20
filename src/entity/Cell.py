@@ -2,13 +2,13 @@ import math
 from modules import *
 
 class Cell:
-    def __init__(self, gameServer, owner, position, size):
+    def __init__(self, gameServer, owner, position, radius):
         self.gameServer = gameServer
         self.owner = owner #playerTracker that owns this cell
 
         self.color = Color(0,0,0)
-        self.radius = 0
         self.size = 0
+        self.radius = 0
         self.mass = 0
         self.cellType = -1 #0 = Player Cell, 1 = Food, 2 = Virus, 3 = Ejected Mass
         self.isSpiked = False #If true, then this cell has spikes around it
@@ -24,13 +24,13 @@ class Cell:
             self.tickOfBirth = self.gameServer.tickCounter
             self.nodeId = self.gameServer.lastNodeId
             self.gameServer.lastNodeId += 1
-            self.setSize(size)
+            self.setRadius(radius)
             self.position = position
 
-    def setSize(self, size):
-        self.size = size
-        self.radius = size * size
-        self.mass = self.radius / 100
+    def setRadius(self, radius):
+        self.radius = radius
+        self.size = radius * radius
+        self.mass = self.size / 100
 
     def canEat(self, cell):
         return False
@@ -40,22 +40,21 @@ class Cell:
 
     def onEat(self, prey):
         if not self.gameServer.config.playerBotGrow:
-            if self.size >= 250 and prey.size<=41 and prey.cellType == 0:
-                prey.radius = 0
+            if self.radius >= 250 and prey.radius<=41 and prey.cellType == 0:
+                prey.size = 0
 
-        self.setSize(math.sqrt(self.radius + prey.radius))
+        self.setRadius(math.sqrt(self.size + prey.size))
 
     def setBoost(self, distance, angle):
         self.boostDistance = distance
         self.boostDirection = Vec2(math.sin(angle), math.cos(angle))
         self.isMoving = True
         if not self.owner:
-            idx = self.gameServer.movingNodes.index(self)
-            if idx < 0:
+            if self not in self.gameServer.movingNodes:
                 self.gameServer.movingNodes.append(self)
 
     def checkBorder(self, border):
-        r = self.size / 2
+        r = self.radius / 2
         if self.position.x < border.minx + r or self.position.x > border.maxx - r:
             self.boostDirection.scale(-1, 1);
             self.position.x = max(self.position.x, border.minx + r);

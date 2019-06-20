@@ -4,8 +4,8 @@ import random
 from modules import *
 
 class Virus(Cell):
-    def __init__(self, gameServer, owner, position, size):
-        Cell.__init__(self, gameServer, owner, position, size)
+    def __init__(self, gameServer, owner, position, radius):
+        Cell.__init__(self, gameServer, owner, position, radius)
         self.cellType = 2
         self.isSpiked = True
         self.isMotherCell = False
@@ -16,24 +16,24 @@ class Virus(Cell):
             return self.cellType == 3
 
     def onEat(self, prey):
-        self.setSize(math.sqrt(self.radius + prey.radius))
-        if self.size >= self.gameServer.config.virusMaxSize:
-            self.setSize(self.gameServer.config.virusMaxSize)
+        self.setRadius(math.sqrt(self.size + prey.size))
+        if self.radius >= self.gameServer.config.virusMaxRadius:
+            self.setRadius(self.gameServer.config.virusMaxRadius)
             self.gameServer.shootVirus(self, prey.boostDirection.angle())
 
     def onEaten(self, cell):
         if not cell.owner:
             return
         config = self.gameServer.config
-        cellsLeft = (config.virusMaxCells or config.playerMaxCells) - cell.owner.cells.length
+        cellsLeft = (config.virusMaxCells or config.playerMaxCells) - len(cell.owner.cells)
 
         if cellsLeft <= 0:
             return
-        splitMin = config.virusMaxPoppedSize**2 / 100
+        splitMin = config.virusMaxPoppedRadius**2 / 100
         cellMass = cell.mass
         splits = []
 
-        if config.virusEqualPopSize:
+        if config.virusEqualPopRadius:
             splitCount = math.min(math.floor(cellMass / splitMin), cellsLeft)
             splitMass = cellMass / (1 + splitCount)
             splits = splits + [splitMass for _ in range(splitCount)]
@@ -76,6 +76,5 @@ class Virus(Cell):
 
 
     def onRemove(self, gameServer):
-        idx = gameServer.nodesVirus.index(self)
-        if idx != -1:
-            gameServer.nodesVirus.pop(idx)
+        if self in gameServer.nodesVirus:
+            gameServer.nodesVirus.remove(self)

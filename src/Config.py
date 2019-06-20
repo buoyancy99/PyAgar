@@ -41,23 +41,23 @@ class Config:
         self.playerBotGrow= 0 # Cells greater than 625 mass cannot grow from cells under 17 mass (set to 1 to disable)
 
         # BORDER
-        self.borderWidth= 14142.135623730952 # Map border size (Vanilla value= 14142)
-        self.borderHeight= 14142.135623730952 # Map border size (Vanilla value= 14142)
+        self.borderWidth= 14142.135623730952 # Map border radius (Vanilla value= 14142)
+        self.borderHeight= 14142.135623730952 # Map border radius (Vanilla value= 14142)
 
         # FOOD
-        self.foodMinSize= 10 # Minimum food size (vanilla 10)
-        self.foodMaxSize= 20 # Maximum food size (vanilla 20)
+        self.foodMinRadius= 10 # Minimum food radius (vanilla 10)
+        self.foodMaxRadius= 20 # Maximum food radius (vanilla 20)
         self.foodMinAmount= 1000 # Minimum food cells on the map
         self.foodMaxAmount= 2000 # Maximum food cells on the map
         self.foodSpawnAmount= 30 # The number of food to spawn per interval
-        self.foodMassGrow= 1 # Enable food mass grow ?
+        self.foodMassGrow= 0 # Enable food mass grow ?
         self.spawnInterval= 20 # The interval between each food cell spawn in ticks (1 tick = 40 ms)
 
         # VIRUSES
-        self.virusMinSize= 100 # Minimum virus size. (vanilla= mass = val*val/100 = 100 mass)
-        self.virusMaxSize= 141.421356237 # Maximum virus size (vanilla= mass = val*val/100 = 200 mass)
-        self.virusMaxPoppedSize= 60 # Maximum size a popped cell can have
-        self.virusEqualPopSize= 0 # Whether popped cells have equal size or not (1 to enable)
+        self.virusMinRadius= 100 # Minimum virus radius. (vanilla= mass = val*val/100 = 100 mass)
+        self.virusMaxRadius= 141.421356237 # Maximum virus radius (vanilla= mass = val*val/100 = 200 mass)
+        self.virusMaxPoppedRadius= 60 # Maximum radius a popped cell can have
+        self.virusEqualPopRadius= 0 # Whether popped cells have equal radius or not (1 to enable)
         self.virusMinAmount= 50 # Minimum number of viruses on the map.
         self.virusMaxAmount= 100 # Maximum number of viruses on the map. If self number is reached then ejected cells will pass through viruses.
         self.motherCellMaxMass= 0 # Maximum amount of mass a mothercell is allowed to have (0 for no limit)
@@ -65,22 +65,22 @@ class Config:
         self.virusMaxCells= 16 # Maximum cells a player can have from viruses.
 
         # EJECTED MASS
-        self.ejectSize= 36.06 # vanilla= mass = val*val/100 = 13 mass?
-        self.ejectSizeLoss= 42.43 # Eject size which will be substracted from player cell (vanilla= mass = val*val/100 = 18 mass?)
+        self.ejectRadius= 36.06 # vanilla= mass = val*val/100 = 13 mass?
+        self.ejectRadiusLoss= 42.43 # Eject radius which will be substracted from player cell (vanilla= mass = val*val/100 = 18 mass?)
         self.ejectCooldown= 3 # Tick count until a player can eject mass again in ticks (1 tick = 40 ms)
         self.ejectSpawnPercent= 0.5 # Chance for a player to spawn from ejected mass. 0.5 = 50% (set to 0 to disable)
         self.ejectVirus= 0 # Whether or not players can eject viruses instead of mass
         self.ejectVelocity= 780 # Velocity of ejecting cells (speed and distance)
 
         # PLAYERS
-        self.playerMinSize= 31.6227766017 # Minimum size a player cell can decay too. (vanilla= val*val/100 = 10 mass)
-        self.playerMaxSize= 1500 # Maximum size a player cell can achive before auto-splitting. (vanilla= mass = val*val/100 = 22500 mass)
-        self.playerMinSplitSize= 59.16079783 # Mimimum size a player cell has to be to split. (vanilla= mass = val*val/100 = 35 mass)
-        self.playerMinEjectSize= 59.16079783 # Minimum size a player cell has to be to eject mass. (vanilla= mass = val*val/100 = 35 mass)
-        self.playerStartSize= 31.6227766017 # Start size of the player cell. (vanilla= mass = val*val/100 = 10 mass)
+        self.playerMinRadius= 31.6227766017 # Minimum radius a player cell can decay too. (vanilla= val*val/100 = 10 mass)
+        self.playerMaxRadius= 1500 # Maximum radius a player cell can achive before auto-splitting. (vanilla= mass = val*val/100 = 22500 mass)
+        self.playerMinSplitRadius= 59.16079783 # Mimimum radius a player cell has to be to split. (vanilla= mass = val*val/100 = 35 mass)
+        self.playerMinEjectRadius= 59.16079783 # Minimum radius a player cell has to be to eject mass. (vanilla= mass = val*val/100 = 35 mass)
+        self.playerStartRadius= 31.6227766017 # Start radius of the player cell. (vanilla= mass = val*val/100 = 10 mass)
         self.playerMaxCells= 16 # Maximum cells a player is allowed to have.
         self.playerSpeed= 1 # Player speed multiplier (1 = normal speed 2 = twice the normal speed)
-        self.playerDecayRate= 0.002 # Amount of player cell size lost per second
+        self.playerDecayRate= 0.002 # Amount of player cell radius lost per second
         self.playerDecayCap= 0 # Maximum mass a cell can have before it's decayrate multiplies by 10. (0 to disable)
         self.playerRecombineTime= 30 # Base time in seconds before a cell is allowed to recombine
         self.playerDisconnectTime= -1 # Time in seconds before a disconnected player's cell is removed (Set to -1 to never remove)
@@ -88,8 +88,8 @@ class Config:
         self.splitVelocity= 780 # Velocity of splitting cells (speed and distance)
 
         # MINIONS
-        self.minionStartSize= 31.6227766017 # Start size of minions (mass = 32*32/100 = 10.24)
-        self.minionMaxStartSize= 31.6227766017 # Maximum value of random start size for minions (set value higher than minionStartSize to enable)
+        self.minionStartRadius= 31.6227766017 # Start radius of minions (mass = 32*32/100 = 10.24)
+        self.minionMaxStartRadius= 31.6227766017 # Maximum value of random start radius for minions (set value higher than minionStartRadius to enable)
         self.minionCollideTeam= 0 #Determines whether minions colide with their team in the Teams gamemode (0 = OFF 1 = ON)
         self.disableERTP= 1 # Whether or not to disable ERTP controls for minions. (must use ERTPcontrol script in /scripts) (Set to 0 to enable)
         self.disableQ= 0 # Whether or not to disable Q controls for minions. (Set 0 to enable)

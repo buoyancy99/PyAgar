@@ -4,6 +4,8 @@ from gamemodes import *
 from GameServer import GameServer
 from players import Player
 import time
+from gym.envs.classic_control import rendering
+
 
 class AgarEnv(gym.Env):
     def __init__(self):
@@ -16,7 +18,7 @@ class AgarEnv(gym.Env):
 
         self.server.Update()
 
-    def reset(self, num_players = 60, gamemode = 0):
+    def reset(self, num_players = 20, gamemode = 0):
         self.server = GameServer()
         self.gamemode = gamemode
         self.num_players = num_players
@@ -26,26 +28,29 @@ class AgarEnv(gym.Env):
         self.viewer = None
 
     def render(self, playeridx, mode = 'human'):
-        print('==================================================')
-        from gym.envs.classic_control import rendering
-        renderscale = 1
-        time.sleep(0.05)
+        print('==================================================', self.players[playeridx].pID)
+
+        # time.sleep(0.3)
         if self.viewer is None:
             self.viewer = rendering.Viewer(self.server.config.serverViewBaseX, self.server.config.serverViewBaseY)
-
+        else:
+            self.viewer.geoms = []
+        self.render_border()
         bound = self.players[playeridx].get_view_box()
         self.viewer.set_bounds(*bound)
 
         for node in self.players[playeridx].viewNodes:
-            print(type(node), node.size)
-            geom = rendering.make_circle(radius= node.size / renderscale)
+            geom = rendering.make_circle(radius= node.radius)
             geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
             xform = rendering.Transform()
 
             geom.add_attr(xform)
+            xform.set_translation(node.position.x, node.position.y)
             self.viewer.add_geom(geom)
-            xform.set_translation(node.position.x / renderscale, node.position.y / renderscale)
 
+        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+
+    def render_border(self):
         map_left = - self.server.config.borderWidth / 2
         map_right = self.server.config.borderWidth / 2
         map_top = - self.server.config.borderHeight / 2
@@ -64,4 +69,7 @@ class AgarEnv(gym.Env):
         self.viewer.add_geom(map_right)
 
 
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None

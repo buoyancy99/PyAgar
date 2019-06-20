@@ -47,8 +47,6 @@ class Player:
         cx = 0
         cy = 0
         for cell in self.cells:
-            if self.pID==0:
-                print(cell.position.x, cell.position.y)
             cx += cell.position.x / len(self.cells)
             cy += cell.position.y / len(self.cells)
         self.centerPos = Vec2(cx , cy)
@@ -89,7 +87,7 @@ class Player:
     def getScale(self):
         scale = 0
         for cell in self.cells:
-            scale += cell.size
+            scale += cell.radius
             self.score += cell.mass
         if scale == 0:
             self.scale = 0.4

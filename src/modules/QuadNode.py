@@ -78,6 +78,6 @@ class QuadNode:
                 return 0
             elif bound.miny > self.bound.cy:
                 return 3 # isBottom
-        return -1 # cannot fit (too large size)
+        return -1 # cannot fit (too large radius)
 
 

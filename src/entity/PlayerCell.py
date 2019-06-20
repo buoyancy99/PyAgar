@@ -2,8 +2,8 @@ from .Cell import Cell
 import math
 
 class PlayerCell(Cell):
-    def __init__(self, gameServer, owner, position, size):
-        Cell.__init__(self, gameServer, owner, position, size)
+    def __init__(self, gameServer, owner, position, radius):
+        Cell.__init__(self, gameServer, owner, position, radius)
         self.cellType = 0
         self.canRemerge = False
 
@@ -13,7 +13,7 @@ class PlayerCell(Cell):
     def getSpeed(self, dist):
         if dist == 0:
             return 0
-        speed = 2.2 * math.pow(self.size, -0.439)
+        speed = 2.2 * math.pow(self.radius, -0.439)
         speed *= 40 * self.gameServer.config.playerSpeed
         return min(dist, speed) / dist
 
@@ -27,12 +27,10 @@ class PlayerCell(Cell):
         gameServer.gameMode.onCellAdd(self)
 
     def onRemove(self, gameServer):
-        idx = self.owner.cells.index(self)
-        if idx != -1:
-            self.owner.cells.pop(idx)
+        if self in self.owner.cells:
+            self.owner.cells.remove(self)
 
-        idx = self.gameServer.nodesPlayer.index(self)
-        if idx != -1:
-            self.gameServer.nodesPlayer.pop(idx)
+        if self in self.gameServer.nodesPlayer:
+            self.gameServer.nodesPlayer.remove(self)
 
         gameServer.gameMode.onCellRemove(self)

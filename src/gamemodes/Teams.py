@@ -64,9 +64,8 @@ class Teams(Mode):
 
     def onCellRemove(self, cell):
         # Remove from team list
-        index = self.nodes[cell.owner.team].indexOf(cell)
-        if index != -1:
-            self.nodes[cell.owner.team].splice(index, 1)
+        if cell in self.nodes[cell.owner.team]:
+            self.nodes[cell.owner.team].remove(cell)
 
 
     def onCellMove(self, cell, gameServer):

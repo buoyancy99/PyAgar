@@ -16,7 +16,7 @@ class GameServer:
         self.version = '1.6.1'
         self.httpServer = None
         self.lastNodeId = 1
-        self.lastPlayerId = 1
+        self.lastPlayerId = -1
         self.players = []
         self.socketCount = 0
         self.largestPlayer = None
@@ -64,7 +64,7 @@ class GameServer:
         # Add to quad-tree & node list
         x = node.position.x
         y = node.position.y
-        s = node.size
+        s = node.radius
         node.quadItem = QuadItem(node, Bound(x - s, y - s, x + s, y + s))
         self.quadTree.insert(node.quadItem)
         self.nodes.append(node)
@@ -169,7 +169,7 @@ class GameServer:
                 self.autoSplit(cell, cell.owner)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
-                    self.updateSizeDecay(cell)
+                    self.updateRadiusDecay(cell)
                 # Remove external minions if necessary
 
             for m in eatCollisions:
@@ -197,7 +197,7 @@ class GameServer:
 
         # update remerge
         time = self.config.playerRecombineTime
-        base = max(time, cell.size * 0.2) * 25
+        base = max(time, cell.radius * 0.2) * 25
         # instant merging conditions
         if not time or player.rec or player.mergeOverride:
             cell.canRemerge = cell.boostDistance < 100
@@ -207,19 +207,18 @@ class GameServer:
         cell.canRemerge = cell.getAge() >= base
 
     # decay player cells
-    def updateSizeDecay(self, cell):
+    def updateRadiusDecay(self, cell):
         rate = self.config.playerDecayRate
         cap = self.config.playerDecayCap
 
-        if not rate or cell.size <= self.config.playerMinSize:
+        if not rate or cell.radius <= self.config.playerMinRadius:
             return
 
-        # remove size from cell at decay rate
+        # remove radius from cell at decay rate
         if cap and cell.mass > cap:
             rate *= 10
         decay = 1 - rate * self.gameMode.decayMod
-        print('updateSizeDecay', math.sqrt(cell.radius * decay), rate*self.gameMode.decayMod)
-        cell.setSize(math.sqrt(cell.radius * decay))
+        cell.setRadius(math.sqrt(cell.size * decay))
 
     def boostCell(self, cell):
         if cell.isMoving and not cell.boostDistance or cell.isRemoved:
@@ -236,18 +235,18 @@ class GameServer:
         self.updateNodeQuad(cell)
 
     def autoSplit(self, cell, player):
-        # get size limit based off of rec mode
+        # get radius limit based off of rec mode
         if player.rec:
-            maxSize = 1e9  # increase limit for rec (1 bil)
+            maxRadius = 1e9  # increase limit for rec (1 bil)
         else:
-            maxSize = self.config.playerMaxSize
+            maxRadius = self.config.playerMaxRadius
 
-        # check size limit
-        if player.mergeOverride or cell.size < maxSize:
+        # check radius limit
+        if player.mergeOverride or cell.radius < maxRadius:
             return
         if len(player.cells) >= self.config.playerMaxCells or self.config.mobilePhysics:
             # cannot split => just limit
-            cell.setSize(maxSize)
+            cell.setRadius(maxRadius)
         else:
             # split in random direction
             angle = random.random() * 2 * math.pi
@@ -256,10 +255,10 @@ class GameServer:
     def updateNodeQuad(self, node):
         # update quad tree
         item = node.quadItem.bound
-        item.minx = node.position.x - node.size
-        item.miny = node.position.y - node.size
-        item.maxx = node.position.x + node.size
-        item.maxy = node.position.y + node.size
+        item.minx = node.position.x - node.radius
+        item.miny = node.position.y - node.radius
+        item.maxx = node.position.x + node.radius
+        item.maxy = node.position.y + node.radius
         self.quadTree.remove(node.quadItem)
         self.quadTree.insert(node.quadItem)
 
@@ -294,14 +293,14 @@ class GameServer:
     def resolveRigidCollision(m):
         if m.d == 0:
             return
-        push = (m.cell.size + m.check.size - m.d) / m.d
+        push = (m.cell.radius + m.check.radius - m.d) / m.d
         if push <= 0:
             return
 
         # body impulse
-        rt = m.cell.radius + m.check.radius
-        r1 = push * m.cell.radius / rt
-        r2 = push * m.check.radius / rt
+        rt = m.cell.size + m.check.size
+        r1 = push * m.cell.size / rt
+        r2 = push * m.check.size / rt
 
         # apply extrusion force
         m.cell.position.sub2(m.p, r2)
@@ -311,7 +310,7 @@ class GameServer:
     def resolveCollision(self, m):
         cell = m.cell
         check = m.check
-        if cell.size > check.size:
+        if cell.radius > check.radius:
             cell = m.check
             check = m.cell
 
@@ -321,14 +320,14 @@ class GameServer:
 
         # check eating distance
         check.div = 20 if self.config.mobilePhysics else 3
-        if m.d >= check.size - cell.size / check.div:
+        if m.d >= check.radius - cell.radius / check.div:
             return  # too far => can't eat
 
         # collision owned => ignore, resolve, or remerge
         if cell.owner and cell.owner == check.owner:
             if cell.getAge() < 13 or check.getAge() < 13:
                 return  # just splited => ignore
-        elif check.size < cell.size * 1.15 or not check.canEat(cell):
+        elif check.radius < cell.radius * 1.15 or not check.canEat(cell):
             return  # Cannot eat or cell refuses to be eaten
 
         # Consume effect
@@ -337,23 +336,25 @@ class GameServer:
         cell.killedBy = check
 
         # Remove cell
+        if check.owner.pID==0:
+            print('removed! by', check.owner.pID)
         self.removeNode(cell)
 
     def splitPlayerCell(self, player, parent, angle, mass):
-        size = math.sqrt(mass * 100)
-        size1 = math.sqrt(parent.radius - size * size)
+        radius = math.sqrt(mass * 100)
+        radius1 = math.sqrt(parent.size - radius * radius)
 
         # Too small to split
-        if not size1 or size1 < self.config.playerMinSize:
+        if not radius1 or radius1 < self.config.playerMinRadius:
             return
 
-        # Remove size from parent cell
-        print('splitPlayerCell!', size1)
-        parent.setSize(size1)
+        # Remove radius from parent cell
+        print('splitPlayerCell!', radius1)
+        parent.setRadius(radius1)
 
         # Create cell and add it to node list
-        newCell = PlayerCell(self, player, parent.position, size)
-        newCell.setBoost(self.config.splitVelocity * math.pow(size, 0.0122), angle)
+        newCell = PlayerCell(self, player, parent.position, radius)
+        newCell.setBoost(self.config.splitVelocity * math.pow(radius, 0.0122), angle)
         self.addNode(newCell)
 
     def randomPos(self):
@@ -361,22 +362,22 @@ class GameServer:
                     self.border.miny + self.border.height * random.random())
 
     def spawnCells(self):
-        # spawn food at random size
+        # spawn food at random radius
         maxCount = self.config.foodMaxAmount - len(self.nodesFood)
         minCount = self.config.foodMinAmount - len(self.nodesFood)
         spawnCount = max(min(maxCount, self.config.foodSpawnAmount), minCount)
         for i in range(spawnCount):
-            cell = Food(self, None, self.randomPos(), self.config.foodMinSize)
+            cell = Food(self, None, self.randomPos(), self.config.foodMinRadius)
             if self.config.foodMassGrow:
-                maxGrow = self.config.foodMaxSize - cell.size
-                cell.setSize(cell.size + maxGrow * random.random())
+                maxGrow = self.config.foodMaxRadius - cell.radius
+                cell.setRadius(cell.radius + maxGrow * random.random())
 
             cell.color = self.getRandomColor()
             self.addNode(cell)
 
         # spawn viruses (safely)
         if len(self.nodesVirus) < self.config.virusMinAmount:
-            virus = Virus(self, None, self.randomPos(), self.config.virusMinSize)
+            virus = Virus(self, None, self.randomPos(), self.config.virusMinRadius)
             if not self.willCollide(virus):
                 self.addNode(virus)
 
@@ -384,10 +385,10 @@ class GameServer:
         if self.disableSpawn:
             return
 
-        # Check for special starting size
-        size = self.config.playerStartSize
+        # Check for special starting radius
+        radius = self.config.playerStartRadius
         if player.spawnmass:
-            size = player.spawnmass
+            radius = player.spawnmass
 
         # Check if can spawn from ejected mass
         if self.nodesEjected:
@@ -396,10 +397,10 @@ class GameServer:
                 # Spawn from ejected mass
                 pos = eject.position.clone()
                 player.color = eject.color
-                size = max(size, eject.size * 1.15)
+                radius = max(radius, eject.radius * 1.15)
 
         # Spawn player safely (do not check minions)
-        cell = PlayerCell(self, player, pos, size)
+        cell = PlayerCell(self, player, pos, radius)
         if self.willCollide(cell):
             pos = self.randomPos()  # Not safe => retry
         self.addNode(cell)
@@ -409,10 +410,10 @@ class GameServer:
 
     def willCollide(self, cell):
         notSafe = False  # Safe by default
-        sqSize = cell.radius
+        sqRadius = cell.size
         pos = self.randomPos()
         d = cell.position.clone().sub(pos)
-        if d.dist() + sqSize <= sqSize * 2:
+        if d.dist() + sqRadius <= sqRadius * 2:
             notSafe = True
 
         def callback_fun(n):
@@ -420,8 +421,8 @@ class GameServer:
             if n.cellType == 0:
                 notSafe = True
 
-        self.quadTree.find(Bound(cell.position.x - cell.size, cell.position.y - cell.size, cell.position.x + cell.size,
-                                 cell.position.y + cell.size), callback_fun)
+        self.quadTree.find(Bound(cell.position.x - cell.radius, cell.position.y - cell.radius, cell.position.x + cell.radius,
+                                 cell.position.y + cell.radius), callback_fun)
 
         return notSafe
 
@@ -435,7 +436,7 @@ class GameServer:
                 d.x = 1
                 d.y = 0
 
-            if cell.size < self.config.playerMinSplitSize:
+            if cell.radius < self.config.playerMinSplitRadius:
                 return  # cannot split
 
             # Get maximum cells for rec mode
@@ -467,7 +468,7 @@ class GameServer:
         if not self.canEjectMass(player) or player.frozen:
             return
         for cell in player.cells:
-            if cell.size < self.config.playerMinEjectSize:
+            if cell.radius < self.config.playerMinEjectRadius:
                 continue  # Too small to eject
 
             d = player.mouse.clone().sub(cell.position)
@@ -476,19 +477,19 @@ class GameServer:
             d.y = d.y / sq if sq > 1 else 0
 
             # Remove mass from parent cell first
-            loss = self.config.ejectSizeLoss
-            loss = cell.radius - loss * loss
-            cell.setSize(math.sqrt(loss))
+            loss = self.config.ejectRadiusLoss
+            loss = cell.size - loss * loss
+            cell.setRadius(math.sqrt(loss))
 
             # Get starting position
-            pos = Vec2(cell.position.x + d.x * cell.size, cell.position.y + d.y * cell.size)
+            pos = Vec2(cell.position.x + d.x * cell.radius, cell.position.y + d.y * cell.radius)
             angle = d.angle() + (random.random() * .6) - .3
 
             # Create cell and add it to node list
             if not self.config.ejectVirus:
-                ejected = EjectedMass(self, None, pos, self.config.ejectSize)
+                ejected = EjectedMass(self, None, pos, self.config.ejectRadius)
             else:
-                ejected = Virus(self, None, pos, self.config.ejectSize)
+                ejected = Virus(self, None, pos, self.config.ejectRadius)
 
             ejected.color = cell.color
             ejected.setBoost(self.config.ejectVelocity, angle)
@@ -497,6 +498,6 @@ class GameServer:
     def shootVirus(self, parent, angle):
         # Create virus and add it to node list
         pos = parent.position.clone()
-        newVirus = Virus(self, None, pos, self.config.virusMinSize)
+        newVirus = Virus(self, None, pos, self.config.virusMinRadius)
         newVirus.setBoost(self.config.virusVelocity, angle)
         self.addNode(newVirus)

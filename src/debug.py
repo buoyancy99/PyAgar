@@ -18,8 +18,8 @@ env.seed(0)
 
 for episode in range(1):
     env.reset()
-    for s in range(200):
+    for s in range(500):
         env.render(0)
-        action = np.array([[1,1,0,0,1],]*60)
+        action = np.array([[1,1,0,0,1],]*20)
         env.step(action)
 env.close()
