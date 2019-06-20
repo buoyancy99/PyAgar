@@ -27,6 +27,8 @@ class Player:
             self.joinGame()
 
     def step(self, action):
+        if len(self.cells) == 0:
+            self.isRemoved = True
         if self.isRemoved:
             return
         # action in format [0] mouse x, [1 mouse y, [2] key space bool, [3] key w bool, [4] no key bool
@@ -37,8 +39,17 @@ class Player:
         elif action[3] == 1:
             self.pressW()
 
-    def updateTick(self):
-        self.updateSpecView()
+    def updateView(self):
+        if self.isRemoved:
+            print('===================gg'
+                  '')
+            return
+        cx = 0
+        cy = 0
+        for cell in self.cells:
+            cx += cell.position.x / len(self.cells)
+            cy += cell.position.y / len(self.cells)
+        self.centerPos = Vec2(cx , cy)
         scale = max(self.getScale(), self.gameServer.config.serverMinScale)
         halfWidth = (self.gameServer.config.serverViewBaseX + 100) / scale / 2
         halfHeight = (self.gameServer.config.serverViewBaseY + 100) / scale / 2
@@ -51,14 +62,6 @@ class Player:
         self.viewNodes = []
         self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
         self.viewNodes = sorted(self.viewNodes, key=lambda x: x.nodeId)
-
-    def updateSpecView(self):
-        cx = 0
-        cy = 0
-        for cell in self.cells:
-            cx += cell.position.x
-            cy += cell.position.y
-        self.centerPos = Vec2(cx / len(self.cells), cy / len(self.cells))
 
     def pressSpace(self):
         if self.gameServer.run:
@@ -96,6 +99,7 @@ class Player:
             return
         self.gameServer.gameMode.onPlayerSpawn(self.gameServer, self)
 
-
+    def get_view_box(self):
+        return [self.viewBox.minx, self.viewBox.maxx, self.viewBox.miny, self.viewBox.maxy]
 
 

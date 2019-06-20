@@ -22,7 +22,7 @@ class QuadNode:
                 return self.childNodes[quad].insert(item)
 
         self.items.append(item)
-        item._quadNode = self;  # used for quick search quad node by item
+        item.quadNode = self;  # used for quick search quad node by item
 
         # split and rebalance current node
         if not self.childNodes and len(self.items) > 64:
@@ -45,10 +45,10 @@ class QuadNode:
 
 
     def remove(self, item):
-        if item._quadNode is not self:
-            return item._quadNode.remove(item)
+        if item.quadNode is not self:
+            return item.quadNode.remove(item)
         self.items.remove(item)
-        item._quadNode = None
+        item.quadNode = None
 
     def find(self, bound, callback):
         if len(self.childNodes) != 0:

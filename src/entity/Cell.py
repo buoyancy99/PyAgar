@@ -59,7 +59,7 @@ class Cell:
         if self.position.x < border.minx + r or self.position.x > border.maxx - r:
             self.boostDirection.scale(-1, 1);
             self.position.x = max(self.position.x, border.minx + r);
-            self.position.x = math.min(self.position.x, border.maxx - r);
+            self.position.x = min(self.position.x, border.maxx - r);
 
         if self.position.y < border.miny + r or self.position.y > border.maxy - r:
             self.boostDirection.scale(1, -1);
@@ -67,13 +67,13 @@ class Cell:
             self.position.y = min(self.position.y, border.maxy - r);
 
 
-    def onEaten(self):
+    def onEaten(self, hunter):
         return
 
-    def onAdd(self):
+    def onAdd(self, gameServer):
         return
 
-    def onRemove(self):
+    def onRemove(self, gameServer):
         return
 
 

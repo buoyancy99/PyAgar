@@ -35,7 +35,7 @@ class Mode():
         # Called when a player cell is added
 
 
-    def onCellRemove(cell):
+    def onCellRemove(self, cell):
         return
     # Called when a player cell is removed
 

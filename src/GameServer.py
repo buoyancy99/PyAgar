@@ -90,12 +90,11 @@ class GameServer:
         node.quadItem = None
 
         # Remove from node lists
-        i = self.nodes.index(node)
-        if i > -1:
-            self.nodes.pop(i)
-            i = self.movingNodes.index(node)
-        if i > -1:
-            self.movingNodes.pop(i)
+        if node in self.nodes:
+            self.nodes.remove(node)
+
+        if node in self.movingNodes:
+            self.movingNodes.remove(node)
 
         # Special on-remove actions
         node.onRemove(self)
@@ -117,7 +116,7 @@ class GameServer:
         for player in self.players:
             if not player:
                 continue
-            player.updateTick()
+            player.updateView()
 
         # for player in self.players:
         #     if not player:
@@ -172,7 +171,6 @@ class GameServer:
                 if ((self.tickCounter + 3) % 25) == 0:
                     self.updateSizeDecay(cell)
                 # Remove external minions if necessary
-
 
             for m in eatCollisions:
                 self.resolveCollision(m)
@@ -278,7 +276,7 @@ class GameServer:
 
         if m.cell.owner != m.check.owner:
             # Minions don't collide with their team when the config value is 0
-            if self.gameMode.haveTeams and m.check.owner.isMi or m.cell.owner.isMi and self.config.minionCollideTeam == 0:
+            if self.gameMode.haveTeams and self.config.minionCollideTeam == 0:
                 return False
             else:
                 # Different owners => same team
@@ -293,9 +291,11 @@ class GameServer:
     # Resolves rigid body collisions
     @staticmethod
     def resolveRigidCollision(m):
+        if m.d == 0:
+            return
         push = (m.cell.size + m.check.size - m.d) / m.d
-        if push <= 0 or m.d == 0:
-            return  # do not extrude
+        if push <= 0:
+            return
 
         # body impulse
         rt = m.cell.radius + m.check.radius
@@ -388,7 +388,7 @@ class GameServer:
 
         # Check if can spawn from ejected mass
         if self.nodesEjected:
-            eject = random.choice(self.nodesEjected) # Randomly selected
+            eject = random.choice(self.nodesEjected)  # Randomly selected
             if random.random() <= self.config.ejectSpawnPercent and eject and eject.boostDistance < 1:
                 # Spawn from ejected mass
                 pos = eject.position.clone()
@@ -397,7 +397,7 @@ class GameServer:
 
         # Spawn player safely (do not check minions)
         cell = PlayerCell(self, player, pos, size)
-        if self.willCollide(cell) and not player.isMi:
+        if self.willCollide(cell):
             pos = self.randomPos()  # Not safe => retry
         self.addNode(cell)
 

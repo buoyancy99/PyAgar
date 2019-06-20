@@ -12,7 +12,7 @@ class Virus(Cell):
         self.color = Color(51, 255, 51)
 
     def canEat(self, cell):
-        if len(self.gameServer.nodeVirus) < self.gameServer.config.virusMaxAmount:
+        if len(self.gameServer.nodesVirus) < self.gameServer.config.virusMaxAmount:
             return self.cellType == 3
 
     def onEat(self, prey):
