@@ -50,7 +50,7 @@ class GameServer:
 
         # Set border, quad-tree
         self.setBorder(self.config.borderWidth, self.config.borderHeight)
-        self.quadTree = QuadNode(self.border)
+        self.quadTree = QuadNode(self.border, 64, 32)
 
     def start(self, gamemode=1):
         # Set up gamemode(s)
@@ -167,13 +167,15 @@ class GameServer:
                 self.movePlayer(cell, cell.owner)
                 self.boostCell(cell)
                 self.autoSplit(cell, cell.owner)
+                self.updateNodeQuad(cell)
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
+                self.updateNodeQuad(cell)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
                     # print('decay')
                     self.updateRadiusDecay(cell)
                 # Remove external minions if necessary
-                self.updateNodeQuad(cell)
+
 
             for m in eatCollisions:
                 self.resolveCollision(m)
@@ -295,28 +297,29 @@ class GameServer:
     # Resolves rigid body collisions
 
     def resolveRigidCollision(self, m):
-        if m.d == 0:
-            return
         # if m.d == 0:
-        #     rand_angle = random.random() * math.pi * 2
-        #     m.p = Vec2(math.cos(rand_angle) * 1, math.sin(rand_angle) * 1)
-        #     m.d = 1
+        #     return
+        if m.d == 0:
+            rand_angle = random.random() * math.pi * 2
+            m.p = Vec2(math.cos(rand_angle) * 1, math.sin(rand_angle) * 1)
+            m.d = 1
 
-        push = (m.cell.radius + m.check.radius - m.d) / m.d
+        push = min((m.cell.radius + m.check.radius - m.d) / m.d, m.cell.radius + m.check.radius - m.d)
         if push <= 0:
             return
 
-        # body impulse
-        rt = m.cell.size + m.check.size
-        r1 = push * m.cell.size / rt
-        r2 = push * m.check.size / rt
+        if m.d < m.cell.radius + m.check.radius and m.cell.radius + m.check.radius >= 0:
+            # body impulse
+            rt = m.cell.size + m.check.size
+            r1 = push * m.cell.size / rt
+            r2 = push * m.check.size / rt
 
-        # apply extrusion force
-        m.cell.position.sub2(m.p, r2)
-        m.check.position.add(m.p, r1)
+            # apply extrusion force
+            m.cell.position.sub2(m.p, r2)
+            m.check.position.add(m.p, r1)
 
-        # print('resolvecollision add', m.p.sqDist() * r1,  m.check.position)
-        # print('resolvecollision sub', m.p.sqDist() * r2, m.cell.position)
+            # print('resolvecollision add', m.p.sqDist() * r1,  m.check.position)
+            # print('resolvecollision sub', m.p.sqDist() * r2, m.cell.position)
 
     # Resolves non-rigid body collision
     def resolveCollision(self, m):
@@ -350,6 +353,7 @@ class GameServer:
         cell.killedBy = check
 
         # Remove cell
+        self.updateNodeQuad(check)
         self.removeNode(cell)
 
     def splitPlayerCell(self, player, parent, angle, mass):

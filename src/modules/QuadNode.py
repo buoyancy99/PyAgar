@@ -4,28 +4,37 @@ def disjoint(a, b):
     return b.minx > a.maxx or b.maxx < a.minx or b.miny > a.maxy or b.maxy < a.miny
 
 class QuadNode:
-    def __init__(self, bound, parent = None):
+    def __init__(self, bound, maxChildren, maxLevel, level = 0, parent = None):
         self.halfWidth = (bound.maxx - bound.minx) / 2
         self.halfHeight = (bound.maxy - bound.miny) / 2
         self.parent = parent
+        self.level = level
+        self.maxLevel = maxLevel
+        self.maxChildren = maxChildren
+        # self.bound = Bound(bound.minx, bound.miny, bound.maxx, bound.maxy)
         self.bound = bound
         self.bound.cx = bound.minx + self.halfWidth
         self.bound.cy = bound.miny + self.halfHeight
+
         self.childNodes = []
         self.items = []
 
 
     def insert(self, item):
-        if len(self.childNodes) != 0:
+        if self.childNodes:
             quad = self.getQuad(item.bound)
             if quad != -1:
                 self.childNodes[quad].insert(item)
+                return
 
         self.items.append(item)
         item.quadNode = self  # used for quick search quad node by item
 
+        if self.childNodes or self.level >= self.maxLevel or len(self.items) <  self.maxChildren:
+            return
+
         # split and rebalance current node
-        if len(self.childNodes)==0 and len(self.items) > 64:
+        if not self.childNodes:
             # split into 4 subnodes (top, left, bottom, right)
             w = self.halfWidth
             h = self.halfHeight
@@ -37,10 +46,10 @@ class QuadNode:
             b1 = Bound(mx, my, mx + w, my + h)
             b2 = Bound(mx, mh, mx + w, mh + h)
             b3 = Bound(mw, mh, mw + w, mh + h)
-            self.childNodes.append(QuadNode(b0))
-            self.childNodes.append(QuadNode(b1))
-            self.childNodes.append(QuadNode(b2))
-            self.childNodes.append(QuadNode(b3))
+            self.childNodes.append(QuadNode(b0, self.maxChildren, self.maxLevel, self.level+1, self))
+            self.childNodes.append(QuadNode(b1, self.maxChildren, self.maxLevel, self.level+1,  self))
+            self.childNodes.append(QuadNode(b2, self.maxChildren, self.maxLevel, self.level+1,  self))
+            self.childNodes.append(QuadNode(b3, self.maxChildren, self.maxLevel, self.level+1,  self))
 
             for item in self.items:
                 quad = self.getQuad(item.bound)
@@ -48,8 +57,23 @@ class QuadNode:
                     self.items.remove(item)
                     item.quadNode = None
                     self.childNodes[quad].insert(item)
-                else:
-                    continue
+
+    def remove(self, item):
+        if item.quadNode is not self:
+            item.quadNode.remove(item)
+            return
+        self.items.remove(item)
+        item.quadNode = None
+        self.cleanup(self)
+
+    def cleanup(self, node):
+        if not node.parent or node.items:
+            return
+        for child in node.childNodes:
+            if child.childNodes or child.items:
+                return
+        node.childNodes  = []
+        self.cleanup(node.parent)
 
     def update(self, item):
         self.remove(item)
@@ -70,21 +94,7 @@ class QuadNode:
             return item.quadNode.contains(item)
         return item in self.items
 
-    def remove(self, item):
-        if item.quadNode is not self:
-            return item.quadNode.remove(item)
-        self.items.remove(item)
-        item.quadNode = None
-        self.cleanup(self)
 
-    def cleanup(self, node):
-        if not node.parent or (node.items) > 0:
-            return
-        for child in node.childNodes:
-            if child.childNodes or child.items:
-                return
-        node.childNodes  = []
-        self.cleanup(node.parent)
 
     def find(self, bound, callback):
         if self.childNodes:
@@ -98,7 +108,7 @@ class QuadNode:
 
         for item in self.items:
             if not disjoint(item.bound, bound):
-                return callback(item.cell)
+                callback(item.cell)
 
     # Returns quadrant for the bound.
     # Returns -1 if bound cannot completely fit within a child node

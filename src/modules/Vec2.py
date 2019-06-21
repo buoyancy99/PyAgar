@@ -42,7 +42,7 @@ class Vec2:
 
 
     def dist(self):
-        return math.floor(self.x ** 2 + self.y ** 2)
+        return self.x ** 2 + self.y ** 2
 
 
     def sqDist(self):

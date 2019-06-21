@@ -62,10 +62,11 @@ class Player:
             self.centerPos.x + halfWidth,
             self.centerPos.y + halfHeight)
 
-        # self.viewNodes = []
-        # self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
+        self.viewNodes = []
+        self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
         # self.viewNodes+=self.cells
-        # self.viewNodes = sorted(self.viewNodes, key=lambda x: x.nodeId)
+        render_order = {1: 0, 0: 1, 3: 2, 2: 3}
+        self.viewNodes = sorted(self.viewNodes, key=lambda x: render_order[x.cellType])
 
     def pressSpace(self):
         if self.gameServer.run:
