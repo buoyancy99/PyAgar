@@ -169,7 +169,7 @@ class GameServer:
                 self.autoSplit(cell, cell.owner)
                 self.updateNodeQuad(cell)
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
-                self.updateNodeQuad(cell)
+                # self.updateNodeQuad(cell)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
                     # print('decay')
@@ -353,7 +353,6 @@ class GameServer:
         cell.killedBy = check
 
         # Remove cell
-        self.updateNodeQuad(check)
         self.removeNode(cell)
 
     def splitPlayerCell(self, player, parent, angle, mass):
