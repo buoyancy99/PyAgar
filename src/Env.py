@@ -96,7 +96,7 @@ class AgarEnv(gym.Env):
             xform = rendering.Transform()
             cellwall.add_attr(xform)
             xform.set_translation(cell.position.x, cell.position.y)
-            cellwall.order = cell.size
+            cellwall.order = cell.radius
             self.geoms_to_render.append(cellwall)
 
             geom = rendering.make_circle(radius=cell.radius - max(10, cell.radius * 0.1))
@@ -104,7 +104,13 @@ class AgarEnv(gym.Env):
             xform = rendering.Transform()
             geom.add_attr(xform)
             xform.set_translation(cell.position.x, cell.position.y)
-            geom.order = cell.size + 0.0001
+            if cell.owner.maxradius < self.server.config.virusMinRadius:
+                geom.order = cell.owner.maxradius + 0.0001
+            elif cell.radius < self.server.config.virusMinRadius:
+                geom.order = cell.radius + 0.0001
+            else: #cell.owner.maxradius < self.server.config.virusMaxRadius:
+                geom.order = cell.owner.maxradius + 0.0001
+
             self.geoms_to_render.append(geom)
 
             # self.viewer.add_onetime(geom)
@@ -114,7 +120,7 @@ class AgarEnv(gym.Env):
             xform = rendering.Transform()
             geom.add_attr(xform)
             xform.set_translation(cell.position.x, cell.position.y)
-            geom.order = cell.size
+            geom.order = cell.radius
             self.geoms_to_render.append(geom)
 
         else:
@@ -123,7 +129,7 @@ class AgarEnv(gym.Env):
             xform = rendering.Transform()
             geom.add_attr(xform)
             xform.set_translation(cell.position.x, cell.position.y)
-            geom.order = cell.size
+            geom.order = cell.radius
             self.geoms_to_render.append(geom)
 
 

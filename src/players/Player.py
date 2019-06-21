@@ -64,6 +64,10 @@ class Player:
 
         self.viewNodes = []
         self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
+        if self.cells:
+            self.maxradius = max(self.cells, key = lambda c : c.radius).radius
+        else:
+            self.maxradius = 0
         # self.viewNodes+=self.cells
         # render_order = {1: 0, 0: 1, 3: 2, 2: 3}
         # self.viewNodes = sorted(self.viewNodes, key=lambda x: x.size)
