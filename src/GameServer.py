@@ -164,10 +164,10 @@ class GameServer:
                     elif check != cell:
                         eatCollisions.insert(0, collision)
 
-                self.quadTree.find(cell.quadItem.bound, callback_fun)
                 self.movePlayer(cell, cell.owner)
                 self.boostCell(cell)
                 self.autoSplit(cell, cell.owner)
+                self.quadTree.find(cell.quadItem.bound, callback_fun)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
                     # print('decay')
@@ -345,7 +345,6 @@ class GameServer:
 
         # Consume effect
         # print(cell, 'eaten by', check)
-        check.onEat(cell)
         check.onEat(cell)
         cell.onEaten(check)
         cell.killedBy = check

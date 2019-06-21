@@ -13,12 +13,12 @@ class Virus(Cell):
 
     def canEat(self, cell):
         if len(self.gameServer.nodesVirus) < self.gameServer.config.virusMaxAmount:
-            return self.cellType == 3
+            return cell.cellType == 3
 
     def onEat(self, prey):
         self.setRadius(math.sqrt(self.size + prey.size))
         if self.radius >= self.gameServer.config.virusMaxRadius:
-            self.setRadius(self.gameServer.config.virusMaxRadius)
+            self.setRadius(self.gameServer.config.virusMinRadius)
             self.gameServer.shootVirus(self, prey.boostDirection.angle())
 
     def onEaten(self, cell):
