@@ -282,11 +282,9 @@ class GameServer:
 
         if m.cell.owner != m.check.owner:
             # Minions don't collide with their team when the config value is 0
-            if self.gameMode.haveTeams and self.config.minionCollideTeam == 0:
-                return False
-            else:
+            if self.gameMode.haveTeams:
                 # Different owners => same team
-                return self.gameMode.haveTeams and m.cell.owner.team == m.check.owner.team
+                return m.cell.owner.team == m.check.owner.team
 
         r = 1 if self.config.mobilePhysics else 13
         if m.cell.getAge() < r or m.check.getAge() < r:
@@ -298,9 +296,11 @@ class GameServer:
 
     def resolveRigidCollision(self, m):
         if m.d == 0:
-            rand_angle = random.random() * math.pi * 2
-            m.p = Vec2(math.cos(rand_angle) * 1, math.sin(rand_angle) * 1)
-            m.d = 1
+            return
+        # if m.d == 0:
+        #     rand_angle = random.random() * math.pi * 2
+        #     m.p = Vec2(math.cos(rand_angle) * 1, math.sin(rand_angle) * 1)
+        #     m.d = 1
 
         push = (m.cell.radius + m.check.radius - m.d) / m.d
         if push <= 0:
