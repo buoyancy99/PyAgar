@@ -3,7 +3,7 @@ import numpy as np
 from Env import AgarEnv
 
 render = True
-num_players = 60
+num_players = 20
 gamemode = 0
 env = AgarEnv(num_players, gamemode)
 env.seed(0)

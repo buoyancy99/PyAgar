@@ -34,7 +34,7 @@ class Virus(Cell):
         splits = []
 
         if config.virusEqualPopRadius:
-            splitCount = math.min(math.floor(cellMass / splitMin), cellsLeft)
+            splitCount = min(math.floor(cellMass / splitMin), cellsLeft)
             splitMass = cellMass / (1 + splitCount)
             splits = splits + [splitMass for _ in range(splitCount)]
             return self.explodeCell(cell, splits)
