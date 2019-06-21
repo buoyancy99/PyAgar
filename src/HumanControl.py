@@ -1,7 +1,4 @@
-from GameServer import GameServer
-from players import Player
-import pyglet
-from pyglet.window import mouse, key, event
+from pyglet.window import key
 import numpy as np
 from Env import AgarEnv
 
@@ -35,7 +32,7 @@ for episode in range(1):
             window.on_key_press = on_key_press
             window.on_mouse_motion = on_mouse_motion
         env.step(action)
-        # print('step', step)
+        print('step', step)
         step+=1
 env.close()
 
