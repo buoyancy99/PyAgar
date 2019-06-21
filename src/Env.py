@@ -107,7 +107,7 @@ class AgarEnv(gym.Env):
             if cell.owner.maxradius < self.server.config.virusMinRadius:
                 geom.order = cell.owner.maxradius + 0.0001
             elif cell.radius < self.server.config.virusMinRadius:
-                geom.order = cell.radius + 0.0001
+                geom.order = self.server.config.virusMinRadius - 0.0001
             else: #cell.owner.maxradius < self.server.config.virusMaxRadius:
                 geom.order = cell.owner.maxradius + 0.0001
 
