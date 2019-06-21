@@ -166,13 +166,13 @@ class GameServer:
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
                 self.movePlayer(cell, cell.owner)
                 self.boostCell(cell)
-                self.updateNodeQuad(cell)
                 self.autoSplit(cell, cell.owner)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
                     # print('decay')
                     self.updateRadiusDecay(cell)
                 # Remove external minions if necessary
+                self.updateNodeQuad(cell)
 
             for m in eatCollisions:
                 self.resolveCollision(m)
@@ -260,13 +260,13 @@ class GameServer:
 
     def updateNodeQuad(self, node):
         # update quad tree
+
         item = node.quadItem.bound
         item.minx = node.position.x - node.radius
         item.miny = node.position.y - node.radius
         item.maxx = node.position.x + node.radius
         item.maxy = node.position.y + node.radius
-        self.quadTree.remove(node.quadItem)
-        self.quadTree.insert(node.quadItem)
+        self.quadTree.update(node.quadItem)
 
     # Checks cells for collision
     def checkCellCollision(self, cell, check):
@@ -311,7 +311,6 @@ class GameServer:
         r2 = push * m.check.size / rt
 
         # apply extrusion force
-        print('mp', m.check.position, m.cell.position)
         m.cell.position.sub2(m.p, r2)
         m.check.position.add(m.p, r1)
 
@@ -350,7 +349,6 @@ class GameServer:
         cell.killedBy = check
 
         # Remove cell
-        print(cell, 'removed')
         self.removeNode(cell)
 
     def splitPlayerCell(self, player, parent, angle, mass):
