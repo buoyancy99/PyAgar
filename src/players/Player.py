@@ -43,7 +43,7 @@ class Player:
         elif action[3] == 1:
             self.pressW()
 
-        self.updateView()
+        # self.updateView()
 
     def updateView(self):
         if self.isRemoved:
@@ -66,7 +66,7 @@ class Player:
         self.viewNodes = []
         self.gameServer.quadTree.find(self.viewBox, lambda check: self.viewNodes.append(check))
         # self.viewNodes+=self.cells
-        self.viewNodes = sorted(self.viewNodes, key=lambda x: x.nodeId)
+        # self.viewNodes = sorted(self.viewNodes, key=lambda x: x.nodeId)
 
     def pressSpace(self):
         if self.gameServer.run:

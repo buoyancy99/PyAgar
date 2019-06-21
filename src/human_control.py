@@ -31,7 +31,7 @@ cv2.setMouseCallback('touchpad',update_mouse)
 
 step = 0
 for episode in range(1):
-    env.reset(1)
+    env.reset(num_players)
 
     while True:
         if render:
@@ -45,7 +45,7 @@ for episode in range(1):
                 action[0][2:] = np.array([0, 0, 1])
             env.render(0)
         env.step(action)
-        print('step', step)
+        # print('step', step)
         step+=1
 env.close()
 cv2.destroyAllWindows()

@@ -33,6 +33,7 @@ class AgarEnv(gym.Env):
         if self.viewer is None:
             self.viewer = rendering.Viewer(self.server.config.serverViewBaseX, self.server.config.serverViewBaseY)
             self.render_border()
+            self.render_grid()
 
 
         bound = self.players[playeridx].get_view_box()
@@ -59,6 +60,17 @@ class AgarEnv(gym.Env):
                 xform.set_translation(node.position.x, node.position.y)
                 self.viewer.add_onetime(geom)
 
+        # for node in self.server.nodes:
+        for node in self.players[playeridx].viewNodes:
+            # if not node.isRemoved:
+            if True:
+                geom = rendering.make_circle(radius= node.radius / 2)
+                geom.set_color(0, 0, 0)
+                xform = rendering.Transform()
+                geom.add_attr(xform)
+                xform.set_translation(node.position.x, node.position.y)
+                self.viewer.add_onetime(geom)
+
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
     def render_border(self):
@@ -68,7 +80,7 @@ class AgarEnv(gym.Env):
         map_bottom = self.server.config.borderHeight / 2
         line_top = rendering.Line((map_left, map_top), (map_right, map_top))
         line_top.set_color(0, 0, 0)
-        self.viewer.add_onetime(line_top)
+        self.viewer.add_geom(line_top)
         line_bottom = rendering.Line((map_left, map_bottom), (map_right, map_bottom))
         line_bottom.set_color(0, 0, 0)
         self.viewer.add_geom(line_bottom)
@@ -78,6 +90,30 @@ class AgarEnv(gym.Env):
         map_right = rendering.Line((map_right, map_top), (map_right, map_bottom))
         map_right.set_color(0, 0, 0)
         self.viewer.add_geom(map_right)
+
+    def render_grid(self):
+        map_left = - self.server.config.borderWidth / 2
+        map_right = self.server.config.borderWidth / 2
+        map_top = - self.server.config.borderHeight / 2
+        map_bottom = self.server.config.borderHeight / 2
+        for i in range(0, int(map_right), 100):
+            line = rendering.Line((i, map_top), (i, map_bottom))
+            line.set_color(0.8, 0.8, 0.8)
+            self.viewer.add_geom(line)
+            line = rendering.Line((-i, map_top), (-i, map_bottom))
+            line.set_color(0.8, 0.8, 0.8)
+            self.viewer.add_geom(line)
+
+        for i in range(0, int(map_bottom), 100):
+            line = rendering.Line((map_left, i), (map_right, i))
+            line.set_color(0.8, 0.8, 0.8)
+            self.viewer.add_geom(line)
+            line = rendering.Line((map_left, -i), (map_right, -i))
+            line.set_color(0.8, 0.8, 0.8)
+            self.viewer.add_geom(line)
+
+
+
 
 
     def close(self):

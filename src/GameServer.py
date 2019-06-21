@@ -170,6 +170,7 @@ class GameServer:
                 self.autoSplit(cell, cell.owner)
                 # Decay player cells once per second
                 if ((self.tickCounter + 3) % 25) == 0:
+                    # print('decay')
                     self.updateRadiusDecay(cell)
                 # Remove external minions if necessary
 
@@ -197,7 +198,7 @@ class GameServer:
         cell.position.add(d, move)
         # self.updateNodeQuad(cell)
 
-        print('movePlayer', d.sqDist() * move, cell.position)
+        # print('movePlayer', d.sqDist() * move, cell.position)
 
         # update remerge
         time = self.config.playerRecombineTime
@@ -282,9 +283,7 @@ class GameServer:
 
         if m.cell.owner != m.check.owner:
             # Minions don't collide with their team when the config value is 0
-            if self.gameMode.haveTeams:
-                # Different owners => same team
-                return m.cell.owner.team == m.check.owner.team
+            return self.gameMode.haveTeams and m.cell.owner.team == m.check.owner.team # Different owners => same team
 
         r = 1 if self.config.mobilePhysics else 13
         if m.cell.getAge() < r or m.check.getAge() < r:
@@ -344,7 +343,7 @@ class GameServer:
             return  # Cannot eat or cell refuses to be eaten
 
         # Consume effect
-        print(cell, 'eaten by', check)
+        # print(cell, 'eaten by', check)
         check.onEat(cell)
         check.onEat(cell)
         cell.onEaten(check)
@@ -442,7 +441,8 @@ class GameServer:
 
     def splitCells(self, player):
         # Split cell order decided by cell age
-        cellToSplit = [cell for cell in player.cells]
+        # cellToSplit = [cell for cell in player.cells]
+        cellToSplit = sorted(player.cells, key=lambda x : x.getAge())
 
         for cell in cellToSplit:
             d = player.mouse.clone().sub(cell.position)
