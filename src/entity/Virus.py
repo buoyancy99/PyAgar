@@ -53,7 +53,8 @@ class Virus(Cell):
 
         splitMass = cellMass / 2
         massLeft  = cellMass / 2
-        while cellsLeft > 0:
+        while cellsLeft > 1:
+            cellsLeft -= 1
             if (massLeft / cellsLeft < splitMin):
                 splitMass = massLeft / cellsLeft
                 splits = splits + [splitMass for _ in range(cellsLeft)]
@@ -64,7 +65,6 @@ class Virus(Cell):
 
             splits.append(splitMass)
             massLeft -= splitMass
-            cellsLeft -= 1
         self.explodeCell(cell, splits)
 
     def explodeCell(self, cell, splits):
