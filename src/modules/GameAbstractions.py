@@ -10,6 +10,9 @@ class Bound():
     def __repr__(self):
         return '[' + str(self.minx) + ',' + str(self.miny) + ',' + str(self.maxx) + ',' + str(self.maxy) + ']'
 
+    def contains(self, position):
+        return position.x > self.minx and position.x < self.maxx and position.y > self.miny and position.y < self.maxy
+
 class QuadItem():
     def __init__(self, cell, bound):
         self.cell = cell

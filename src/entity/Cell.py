@@ -46,7 +46,6 @@ class Cell:
         self.setRadius(math.sqrt(self.size + prey.size))
 
     def setBoost(self, distance, angle):
-        print('boosting')
         self.boostDistance = distance
         self.boostDirection = Vec2(math.sin(angle), math.cos(angle))
         self.isMoving = True

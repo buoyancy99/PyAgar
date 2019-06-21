@@ -50,26 +50,11 @@ class AgarEnv(gym.Env):
         #     xform.set_translation(node.position.x, node.position.y)
         #     self.viewer.add_onetime(geom)
 
-        for node in self.server.nodes:
+        render_order = {1:0, 0:1, 3:2, 2:3}
+        for node in sorted(self.server.nodes, key=lambda x: render_order[x.cellType]):
         # for node in self.players[playeridx].viewNodes:
-            if not node.isRemoved:
-                geom = rendering.make_circle(radius= node.radius)
-                geom.set_color(node.color.r / 255.0, node.color.g / 255.0, node.color.b / 255.0)
-                xform = rendering.Transform()
-                geom.add_attr(xform)
-                xform.set_translation(node.position.x, node.position.y)
-                self.viewer.add_onetime(geom)
-
-        # for node in self.server.nodes:
-        for node in self.players[playeridx].viewNodes:
-            # if not node.isRemoved:
-            if True:
-                geom = rendering.make_circle(radius= node.radius / 2)
-                geom.set_color(0, 0, 0)
-                xform = rendering.Transform()
-                geom.add_attr(xform)
-                xform.set_translation(node.position.x, node.position.y)
-                self.viewer.add_onetime(geom)
+            if not node.isRemoved and self.players[playeridx].viewBox.contains(node.position):
+                self.render_cell(node)
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
@@ -112,9 +97,27 @@ class AgarEnv(gym.Env):
             line.set_color(0.8, 0.8, 0.8)
             self.viewer.add_geom(line)
 
-
-
-
+    def render_cell(self, cell):
+        if cell.cellType == 0:
+            geom = rendering.make_circle(radius=cell.radius)
+            geom.set_color(cell.color.r * 0.75 / 255.0, cell.color.g * 0.75 / 255.0 , cell.color.b * 0.75 / 255.0)
+            xform = rendering.Transform()
+            geom.add_attr(xform)
+            xform.set_translation(cell.position.x, cell.position.y)
+            self.viewer.add_onetime(geom)
+            geom = rendering.make_circle(radius=cell.radius - max(5, cell.radius * 0.05))
+            geom.set_color(cell.color.r / 255.0, cell.color.g / 255.0, cell.color.b / 255.0)
+            xform = rendering.Transform()
+            geom.add_attr(xform)
+            xform.set_translation(cell.position.x, cell.position.y)
+            self.viewer.add_onetime(geom)
+        else:
+            geom = rendering.make_circle(radius=cell.radius)
+            geom.set_color(cell.color.r / 255.0, cell.color.g / 255.0, cell.color.b / 255.0)
+            xform = rendering.Transform()
+            geom.add_attr(xform)
+            xform.set_translation(cell.position.x, cell.position.y)
+            self.viewer.add_onetime(geom)
 
     def close(self):
         if self.viewer is not None:

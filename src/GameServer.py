@@ -360,7 +360,7 @@ class GameServer:
             return
 
         # Remove radius from parent cell
-        print('splitPlayerCell!', radius1)
+        # print('splitPlayerCell!', radius1)
         parent.setRadius(radius1)
 
         # Create cell and add it to node list
@@ -440,7 +440,7 @@ class GameServer:
     def splitCells(self, player):
         # Split cell order decided by cell age
         # cellToSplit = [cell for cell in player.cells]
-        cellToSplit = sorted(player.cells, key=lambda x : x.getAge())
+        cellToSplit = sorted(player.cells, key=lambda x : -x.getAge())
 
         for cell in cellToSplit:
             d = player.mouse.clone().sub(cell.position)
@@ -449,7 +449,7 @@ class GameServer:
                 d.y = 0
 
             if cell.radius < self.config.playerMinSplitRadius:
-                return  # cannot split
+                continue  # cannot split
 
             # Get maximum cells for rec mode
             if player.rec:
