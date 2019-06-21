@@ -49,9 +49,8 @@ class Cell:
         self.boostDistance = distance
         self.boostDirection = Vec2(math.sin(angle), math.cos(angle))
         self.isMoving = True
-        if not self.owner:
-            if self not in self.gameServer.movingNodes:
-                self.gameServer.movingNodes.append(self)
+        if not self.owner and self not in self.gameServer.movingNodes:
+            self.gameServer.movingNodes.append(self)
 
     def checkBorder(self, border):
         r = self.radius / 2

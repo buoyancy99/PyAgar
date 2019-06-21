@@ -133,7 +133,7 @@ class GameServer:
             # Move moving nodes first
             for cell in self.movingNodes:
                 if cell.isRemoved:
-                    return
+                    continue
                 # Scan and check for ejected mass / virus collisions
                 self.boostCell(cell)
                 self.updateNodeQuad(cell)
@@ -142,11 +142,12 @@ class GameServer:
                     if cell.cellType == 3 and check.cellType == 3 and not self.config.mobilePhysics:
                         self.resolveRigidCollision(collision)
                     else:
+                        print('solve virus eat foodww')
                         self.resolveCollision(collision)
 
                 self.quadTree.find(cell.quadItem.bound, callback_fun)
                 if not cell.isMoving:
-                    self.movingNodes = []
+                    self.movingNodes.remove(cell)
 
             # Update players and scan for collisions
             eatCollisions = []
@@ -330,8 +331,9 @@ class GameServer:
             return
 
         # check eating distance
-        check.div = 20 if self.config.mobilePhysics else 3
-        if m.d >= check.radius - cell.radius / check.div:
+        div = 20 if self.config.mobilePhysics else 3
+        div = 20 if m.cell.cellType == 2 and m.check.cellType == 3 else div
+        if m.d >= check.radius - cell.radius / div:
             return  # too far => can't eat
 
         # collision owned => ignore, resolve, or remerge
