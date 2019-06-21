@@ -8,9 +8,11 @@ import rendering
 
 
 class AgarEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, num_players, gamemode):
         super(AgarEnv, self).__init__()
         self.viewer = None
+        self.num_players = num_players
+        self.gamemode = gamemode
 
     def step(self, actions):
         for action, player in zip(actions, self.players):
@@ -18,12 +20,10 @@ class AgarEnv(gym.Env):
         # print('=========', len(self.players[0].cells))
         self.server.Update()
 
-    def reset(self, num_players = 1, gamemode = 0):
+    def reset(self):
         self.server = GameServer()
-        self.gamemode = gamemode
-        self.num_players = num_players
         self.server.start(self.gamemode)
-        self.players = [Player(self.server) for _ in range(num_players)]
+        self.players = [Player(self.server) for _ in range(self.num_players)]
         self.server.addPlayers(self.players)
         self.viewer = None
 
@@ -110,7 +110,7 @@ class AgarEnv(gym.Env):
             # self.viewer.add_onetime(geom)
         elif cell.cellType == 2:
             geom = rendering.make_circle(radius=cell.radius)
-            geom.set_color(cell.color.r / 255.0, cell.color.g / 255.0, cell.color.b / 255.0, 0.7)
+            geom.set_color(cell.color.r / 255.0, cell.color.g / 255.0, cell.color.b / 255.0, 0.6)
             xform = rendering.Transform()
             geom.add_attr(xform)
             xform.set_translation(cell.position.x, cell.position.y)

@@ -6,9 +6,11 @@ import numpy as np
 from Env import AgarEnv
 
 render = True
-env = AgarEnv()
-env.seed(0)
 num_players = 60
+gamemode = 0
+env = AgarEnv(num_players, gamemode)
+env.seed(0)
+
 action = np.zeros((num_players, 5))
 
 step = 0
@@ -24,7 +26,7 @@ def on_key_press(k, modifiers):
         action[0][2:] = np.array([1, 0, 0])
 
 for episode in range(1):
-    env.reset(num_players)
+    env.reset()
     while True:
         action[0][2:] = np.array([0, 0, 1])
         if render:
