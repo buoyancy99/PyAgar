@@ -15,7 +15,7 @@ class AgarEnv(gym.Env):
     def step(self, actions):
         for action, player in zip(actions, self.players):
             player.step(action)
-        print(len(self.players[0].cells))
+        # print('=========', len(self.players[0].cells))
         self.server.Update()
 
     def reset(self, num_players = 1, gamemode = 0):
@@ -28,7 +28,6 @@ class AgarEnv(gym.Env):
         self.viewer = None
 
     def render(self, playeridx, mode = 'human'):
-        print('==================================================', self.players[playeridx].pID)
 
         # time.sleep(0.3)
         if self.viewer is None:

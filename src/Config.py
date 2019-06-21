@@ -50,7 +50,7 @@ class Config:
         self.foodMinAmount= 1000 # Minimum food cells on the map
         self.foodMaxAmount= 2000 # Maximum food cells on the map
         self.foodSpawnAmount= 30 # The number of food to spawn per interval
-        self.foodMassGrow= 0 # Enable food mass grow ?
+        self.foodMassGrow= 1 # Enable food mass grow ?
         self.spawnInterval= 20 # The interval between each food cell spawn in ticks (1 tick = 40 ms)
 
         # VIRUSES

@@ -346,6 +346,7 @@ class GameServer:
         # Consume effect
         print(cell, 'eaten by', check)
         check.onEat(cell)
+        check.onEat(cell)
         cell.onEaten(check)
         cell.killedBy = check
 

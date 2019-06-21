@@ -18,7 +18,6 @@ class Player:
         self.isRemoved = False
         self.spawnmass = 0
         self.rec = False
-        self.mergeOverride = False
         self.viewNodes = []
         self.lastEject = None
         if gameServer:
