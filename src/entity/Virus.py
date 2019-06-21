@@ -9,7 +9,7 @@ class Virus(Cell):
         self.cellType = 2
         self.isSpiked = True
         self.isMotherCell = False
-        self.color = Color(25, 127, 25)
+        self.color = Color(42, 255, 42)
 
     def canEat(self, cell):
         if len(self.gameServer.nodesVirus) < self.gameServer.config.virusMaxAmount:
