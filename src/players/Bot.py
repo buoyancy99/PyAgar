@@ -16,6 +16,7 @@ class Bot(Player):
         if self.isRemoved:
             return
         visible_food = []
+        visible_virus = []
         action = np.zeros(4)
         has_enemy = False
         for cell in self.viewNodes:
@@ -26,16 +27,27 @@ class Bot(Player):
                     has_enemy = True
                 elif self.gameServer.gameMode.haveTeams and cell.owner.team != self.team:
                     has_enemy = True
-        if not has_enemy:
+            elif cell.cellType ==2:
+                visible_virus.append(cell)
+        if not has_enemy and random.random() < 0.005:
             action[2] = 1
 
         if visible_food and self.cells:
             if not self.tickstamp or self.gameServer.tickCounter - self.tickstamp >= 20:
-                self.mincell = min(self.cells, key = lambda c : c.radius)
-                target = sorted(visible_food, key=lambda c: (abs(c.position.x - self.mincell.position.x) + abs(c.position.y - self.mincell.position.y)) / c.mass)[0]
-
-                # target = sorted(visible_food, key=lambda c: (abs(c.position.x - self.centerPos.x) + abs(c.position.y - self.centerPos.y)) / c.mass)[0]
-                relative_position = target.position.clone().sub(self.centerPos)
+                self.mincell = min(self.cells, key=lambda c: c.radius)
+                self.maxcell = max(self.cells, key=lambda c: c.radius)
+                if len(self.cells) >= 14 and self.maxradius > self.gameServer.config.virusMinRadius * 1.15 and visible_virus:
+                    target = sorted(visible_virus, key=lambda c: (abs(c.position.x - self.maxcell.position.x) + abs(c.position.y - self.maxcell.position.y)) / c.mass + 10000 * (self.maxradius <= c.radius * 1.15))[0]
+                    relative_position = target.position.clone().sub(self.maxcell.position)
+                    action[2] = 0
+                elif len(self.cells) >= 4 and self.maxradius > self.gameServer.config.virusMinRadius* 1.15 and visible_virus and not has_enemy:
+                    target = sorted(visible_virus, key=lambda c: (abs(c.position.x - self.maxcell.position.x) + abs(c.position.y - self.maxcell.position.y)) / c.mass + 10000 * (self.maxradius <= c.radius * 1.15))[0]
+                    relative_position = target.position.clone().sub(self.maxcell.position)
+                    action[2] = 0
+                else:
+                    target = sorted(visible_food, key=lambda c: (abs(c.position.x - self.mincell.position.x) + abs(c.position.y - self.mincell.position.y)) / c.mass)[0]
+                    # target = sorted(visible_food, key=lambda c: (abs(c.position.x - self.centerPos.x) + abs(c.position.y - self.centerPos.y)) / c.mass)[0]
+                    relative_position = target.position.clone().sub(self.mincell.position)
 
                 action[0] = relative_position.x / max(abs(relative_position.x), abs(relative_position.y))
                 action[1] = relative_position.y / max(abs(relative_position.x), abs(relative_position.y))

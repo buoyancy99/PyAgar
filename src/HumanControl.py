@@ -4,7 +4,7 @@ from Env import AgarEnv
 
 render = True
 num_agents = 1
-num_bots = 29
+num_bots = 59
 gamemode = 0
 env = AgarEnv(num_agents, num_bots, gamemode)
 env.seed(0)
