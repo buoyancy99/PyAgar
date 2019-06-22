@@ -2,33 +2,45 @@ import gym
 from gym import spaces
 from gamemodes import *
 from GameServer import GameServer
-from players import Player
+from players import Player, Bot
 import time
 import rendering
 
 
 class AgarEnv(gym.Env):
-    def __init__(self, num_players, gamemode):
+    def __init__(self, num_agents, num_bots, gamemode = 0):
         super(AgarEnv, self).__init__()
         self.viewer = None
-        self.num_players = num_players
+        self.num_players = num_agents + num_bots
+        self.num_agents = num_agents
+        self.num_bots = num_bots
         self.gamemode = gamemode
 
     def step(self, actions):
-        for action, player in zip(actions, self.players):
-            player.step(action)
-        # print('=========', len(self.players[0].cells))
+        for action, agent in zip(actions, self.agents):
+            agent.step(action)
+        for bot in self.bots:
+            bot.step()
+
         self.server.Update()
+        observations = [agent.viewNodes for agent in self.agents]
+        rewards = []
+        done = False
+        return observations, rewards, done
 
     def reset(self):
         self.server = GameServer()
         self.server.start(self.gamemode)
-        self.players = [Player(self.server) for _ in range(self.num_players)]
+        self.agents = [Player(self.server) for _ in range(self.num_agents)]
+        self.bots = [Bot(self.server) for _ in range(self.num_bots)]
+        self.players = self.agents + self.bots
         self.server.addPlayers(self.players)
         self.viewer = None
+        self.server.Update()
+        observations = [agent.viewNodes for agent in self.agents]
+        return observations
 
     def render(self, playeridx, mode = 'human'):
-
         # time.sleep(0.3)
         if self.viewer is None:
             self.viewer = rendering.Viewer(self.server.config.serverViewBaseX, self.server.config.serverViewBaseY)

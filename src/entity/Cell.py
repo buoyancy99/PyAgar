@@ -5,7 +5,6 @@ class Cell:
     def __init__(self, gameServer, owner, position, radius):
         self.gameServer = gameServer
         self.owner = owner #playerTracker that owns this cell
-
         self.color = Color(0,0,0)
         self.size = 0
         self.radius = 0

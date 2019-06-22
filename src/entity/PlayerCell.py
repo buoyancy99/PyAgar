@@ -6,6 +6,7 @@ class PlayerCell(Cell):
         Cell.__init__(self, gameServer, owner, position, radius)
         self.cellType = 0
         self.canRemerge = False
+        self.pID = owner.pID
 
     def canEat(self, cell):
         return True
