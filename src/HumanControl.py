@@ -1,10 +1,11 @@
 from pyglet.window import key
 import numpy as np
 from Env import AgarEnv
+import time
 
 render = True
 num_agents = 1
-num_bots = 59
+num_bots = 19
 gamemode = 0
 env = AgarEnv(num_agents, num_bots, gamemode)
 env.seed(0)
@@ -23,11 +24,13 @@ def on_key_press(k, modifiers):
     elif k == key.SPACE:
         action[0][2:] = np.array([1, 0])
 
+start = time.time()
 for episode in range(1):
     observation = env.reset()
     while True:
-        if step % 200 == 0:
+        if step % 40 == 0:
             print('step', step)
+            print(step / (time.time() - start))
         if render:
             env.render(0)
             if not window:
