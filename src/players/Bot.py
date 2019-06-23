@@ -152,11 +152,14 @@ class Bot(Player):
             if check.cellType == 0:
                 checkmax = check.owner.maxcell()
                 selfmin = self.mincell()
-                if checkmax and selfmin.radius > checkmax.radius * 1.15 and not self.splitCooldown and 820 - cell.radius / 2 - check.radius >= distance:
+                if checkmax and selfmin.radius > checkmax.radius * 1.3 and not self.splitCooldown and 820 - cell.radius / 2 - check.radius >= distance:
                     # Splitkill the target
-                    self.splitCooldown = 20
-                    action[0] = check.position.x
-                    action[1] = check.position.y
+                    self.splitCooldown = 10
+                    relative = checkmax.position.clone().sub(self.maxcell().position)
+                    if relative.sqDist():
+                        relative = relative.normalize()
+                    action[0] = relative.x
+                    action[1] = relative.y
                     action[2] = 1
                     self.action = action
                     return
