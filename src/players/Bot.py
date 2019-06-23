@@ -6,28 +6,38 @@ import random
 class Bot(Player):
     def __init__(self, gameServer, name='bot'):
         super().__init__(gameServer, name)
-        self.tickstamp = None
+        self.actionCooldown = 0
         self.splitCooldown = 0
         self.actionstamp = np.zeros(4)
-        if random.random() < 0.2:
-            self.step = self.peace_step
-        else:
-            self.step = self.aggressive_step
 
-    def aggressive_step(self):
+    def step(self):
         if len(self.cells) == 0:
             self.isRemoved = True
         if self.isRemoved:
             return
+
+        if self.actionCooldown:
+            self.actionCooldown -= 1
+            self.action[:2] = self.actionstamp[:2]
+            return
+        self.actionCooldown = 5
+
         if self.splitCooldown:
             self.splitCooldown -= 1
-        self.decide(self.maxcell())
+
+        if random.random() < 0.2:
+            self.peace_step()
+        else:
+            self.aggressive_step()
+
+
+        self.mouse = self.centerPos.add(Vec2(self.action[0] * self.gameServer.config.serverViewBaseX, self.action[1] * self.gameServer.config.serverViewBaseY), 1)
+        if self.action[2] == 1:
+            self.pressSpace()
+        elif self.action[3] == 1:
+            self.pressW()
 
     def peace_step(self):
-        if len(self.cells) == 0:
-            self.isRemoved = True
-        if self.isRemoved:
-            return
         visible_food = []
         visible_virus = []
         action = np.zeros(4)
@@ -42,53 +52,40 @@ class Bot(Player):
                     has_enemy = True
             elif cell.cellType ==2:
                 visible_virus.append(cell)
-        if not has_enemy and random.random() < 0.005:
+        if not has_enemy and random.random() < 0.05:
             action[2] = 1
 
         if visible_food and self.cells:
-            if not self.tickstamp or self.gameServer.tickCounter - self.tickstamp >= 20:
-                mincell = self.mincell()
-                maxcell = self.maxcell()
-                if len(self.cells) >= 14 and self.maxradius > self.gameServer.config.virusMinRadius * 1.15 and visible_virus:
-                    target = sorted(visible_virus, key=lambda c: (abs(c.position.x - maxcell.position.x) + abs(c.position.y - maxcell.position.y)) / c.mass + 10000 * (self.maxradius <= c.radius * 1.15))[0]
-                    relative_position = target.position.clone().sub(maxcell.position)
-                    action[2] = 0
-                elif len(self.cells) >= 4 and self.maxradius > self.gameServer.config.virusMinRadius* 1.15 and visible_virus and not has_enemy:
-                    target = sorted(visible_virus, key=lambda c: (abs(c.position.x - maxcell.position.x) + abs(c.position.y - maxcell.position.y)) / c.mass + 10000 * (self.maxradius <= c.radius * 1.15))[0]
-                    relative_position = target.position.clone().sub(maxcell.position)
-                    action[2] = 0
-                else:
-                    target = sorted(visible_food, key=lambda c: (abs(c.position.x - mincell.position.x) + abs(c.position.y - mincell.position.y)) / c.mass)[0]
-                    # target = sorted(visible_food, key=lambda c: (abs(c.position.x - self.centerPos.x) + abs(c.position.y - self.centerPos.y)) / c.mass)[0]
-                    relative_position = target.position.clone().sub(mincell.position)
-
-                action[0] = relative_position.x / max(abs(relative_position.x), abs(relative_position.y))
-                action[1] = relative_position.y / max(abs(relative_position.x), abs(relative_position.y))
-
-                self.tickstamp = self.gameServer.tickCounter
-                self.actionstamp[:2] = action[:2]
+            mincell = self.mincell()
+            maxcell = self.maxcell()
+            if len(self.cells) >= 14 and self.maxradius > self.gameServer.config.virusMinRadius * 1.15 and visible_virus:
+                target = sorted(visible_virus, key=lambda c: (abs(c.position.x - maxcell.position.x) + abs(c.position.y - maxcell.position.y)) / c.mass + 10000 * (self.maxradius <= c.radius * 1.15))[0]
+                relative_position = target.position.clone().sub(maxcell.position)
+                action[2] = 0
+            elif len(self.cells) >= 4 and self.maxradius > self.gameServer.config.virusMinRadius* 1.15 and visible_virus and not has_enemy:
+                target = sorted(visible_virus, key=lambda c: (abs(c.position.x - maxcell.position.x) + abs(c.position.y - maxcell.position.y)) / c.mass + 10000 * (self.maxradius <= c.radius * 1.15))[0]
+                relative_position = target.position.clone().sub(maxcell.position)
+                action[2] = 0
             else:
-                action[:2] = self.actionstamp[:2]
+                target = sorted(visible_food, key=lambda c: (abs(c.position.x - mincell.position.x) + abs(c.position.y - mincell.position.y)) / c.mass)[0]
+                # target = sorted(visible_food, key=lambda c: (abs(c.position.x - self.centerPos.x) + abs(c.position.y - self.centerPos.y)) / c.mass)[0]
+                relative_position = target.position.clone().sub(mincell.position)
+
+            action[0] = relative_position.x / max(abs(relative_position.x), abs(relative_position.y))
+            action[1] = relative_position.y / max(abs(relative_position.x), abs(relative_position.y))
+
+            self.actionstamp[:2] = action[:2]
 
         elif self.cells:
-            if not self.tickstamp or self.gameServer.tickCounter - self.tickstamp >= 500:
-                self.tickstamp = self.gameServer.tickCounter
-                action[:2] = np.random.randint(2, size=(2)) * 2 - 1
-                self.actionstamp[:2] = action[:2]
+            action[:2] = np.random.randint(2, size=(2)) * 2 - 1
+            self.actionstamp[:2] = action[:2]
 
-            else:
-                action[:2] = self.actionstamp[:2]
+        self.action = action
 
-        self.mouse = self.centerPos.add(Vec2(action[0] * self.gameServer.config.serverViewBaseX, action[1] * self.gameServer.config.serverViewBaseY), 1)
-        if action[2] == 1:
-            self.pressSpace()
-        elif action[3] == 1:
-            self.pressW()
-
-    def decide(self, cell):
-        if not cell:
-            return;  # Cell was eaten, check in the next tick (I'm too lazy)
+    def aggressive_step(self):
+        cell = self.maxcell()
         result = Vec2(0, 0);  # For splitting
+        action = np.zeros(4)
 
         for check in self.viewNodes:
             if check.owner == self:
@@ -157,9 +154,11 @@ class Bot(Player):
                 selfmin = self.mincell()
                 if checkmax and selfmin.radius > checkmax.radius * 1.15 and not self.splitCooldown and 820 - cell.radius / 2 - check.radius >= distance:
                     # Splitkill the target
-                    self.splitCooldown = 30
-                    self.mouse = check.position.clone()
-                    self.pressSpace()
+                    self.splitCooldown = 20
+                    action[0] = check.position.x
+                    action[1] = check.position.y
+                    action[2] = 1
+                    self.action = action
                     return
                 else:
                     result.add(displacement.normalize(), influence)
@@ -167,6 +166,8 @@ class Bot(Player):
             # Produce force vector exerted by self entity on the cell
                 result.add(displacement.normalize(), influence)
 
-
-        # Set bot's mouse position
-        self.mouse = Vec2(cell.position.x + result.x * 5000, cell.position.y + result.y * 5000)
+        if result.sqDist():
+            result = result.normalize()
+        action[0] = result.x
+        action[1] = result.y
+        self.action = action
