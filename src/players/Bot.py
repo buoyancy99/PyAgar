@@ -120,6 +120,8 @@ class Bot(Player):
                     if len(self.cells) == self.gameServer.config.playerMaxCells:
                         # Won't explode
                         influence = check.radius * 2.5
+                    elif len(self.cells) >= self.gameServer.config.playerMaxCells - 6:
+                        influence = check.radius * 2
                     else:
                         # Can explode
                         influence = -1
@@ -153,7 +155,7 @@ class Bot(Player):
             if check.cellType == 0:
                 checkmax = check.owner.maxcell()
                 selfmin = self.mincell()
-                if checkmax and selfmin.radius > checkmax.radius * 1.15 and len(self.cells)<=3 and not self.splitCooldown and 820 - cell.radius / 2 - check.radius >= distance:
+                if checkmax and selfmin.radius > checkmax.radius * 1.15 and not self.splitCooldown and 820 - cell.radius / 2 - check.radius >= distance:
                     # Splitkill the target
                     self.splitCooldown = 30
                     self.mouse = check.position.clone()
