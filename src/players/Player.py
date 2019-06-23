@@ -112,4 +112,9 @@ class Player:
         # notice y positive is upward in opanai gym!
         return [self.viewBox.minx, self.viewBox.maxx, self.viewBox.miny, self.viewBox.maxy]
 
+    def maxcell(self):
+        return max(self.cells, key=lambda c: c.radius)
+
+    def mincell(self):
+        return max(self.cells, key=lambda c: c.radius)
 
