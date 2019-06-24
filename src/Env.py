@@ -1,3 +1,10 @@
+# Author: Boyuan Chen
+# Berkeley Artifical Intelligence Research
+
+# The project is largely based on m-byte918's javascript implementation of the game with a lot of bug fixes and optimization for python
+# Original Ogar-Edited project https://github.com/m-byte918/MultiOgar-Edited
+
+
 import gym
 from gym import spaces
 from gamemodes import *

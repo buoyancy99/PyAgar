@@ -25,7 +25,7 @@ class Bot(Player):
         if self.splitCooldown:
             self.splitCooldown -= 1
 
-        if random.random() < 0.2:
+        if random.random() < 0.3:
             self.peace_step()
         else:
             self.aggressive_step()
@@ -152,10 +152,10 @@ class Bot(Player):
             if check.cellType == 0:
                 checkmax = check.owner.maxcell()
                 selfmin = self.mincell()
-                if checkmax and selfmin.radius > checkmax.radius * 1.3 and not self.splitCooldown and 820 - cell.radius / 2 - check.radius >= distance:
+                if checkmax and cell.radius / 1.414 > checkmax.radius * 1.15 and selfmin.radius > checkmax.radius and not self.splitCooldown and 820 - cell.radius / 2 - checkmax.radius >= distance:
                     # Splitkill the target
                     self.splitCooldown = 10
-                    relative = checkmax.position.clone().sub(self.maxcell().position)
+                    relative = checkmax.position.clone().sub(cell.position)
                     if relative.sqDist():
                         relative = relative.normalize()
                     action[0] = relative.x

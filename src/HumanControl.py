@@ -5,7 +5,7 @@ import time
 
 render = True
 num_agents = 1
-num_bots = 19
+num_bots = 59
 gamemode = 0
 env = AgarEnv(num_agents, num_bots, gamemode)
 env.seed(0)
