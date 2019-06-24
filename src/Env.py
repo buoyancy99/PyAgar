@@ -41,7 +41,7 @@ class AgarEnv(gym.Env):
         return observations
 
     def render(self, playeridx, mode = 'human'):
-        time.sleep(0.001)
+        # time.sleep(0.001)
         if self.viewer is None:
             self.viewer = rendering.Viewer(self.server.config.serverViewBaseX, self.server.config.serverViewBaseY)
             self.render_border()
