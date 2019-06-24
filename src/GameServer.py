@@ -5,7 +5,6 @@ from modules import *
 from entity import *
 from gamemodes import *
 
-
 # noinspection PyAttributeOutsideInit
 class GameServer:
     def __init__(self):
