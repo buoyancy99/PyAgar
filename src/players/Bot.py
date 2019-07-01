@@ -31,7 +31,7 @@ class Bot(Player):
             self.aggressive_step()
 
 
-        self.mouse = self.centerPos.add(Vec2(self.action[0] * self.gameServer.config.serverViewBaseX, self.action[1] * self.gameServer.config.serverViewBaseY), 1)
+        self.mouse = self.centerPos.add(Vec2(self.action[0] * 800, self.action[1] * 800), 1)
         if self.action[2] == 1:
             self.pressSpace()
         elif self.action[3] == 1:
@@ -152,10 +152,10 @@ class Bot(Player):
             if check.cellType == 0:
                 checkmax = check.owner.maxcell()
                 selfmin = self.mincell()
-                if checkmax and cell.radius / 1.414 > checkmax.radius * 1.15 and selfmin.radius > checkmax.radius and not self.splitCooldown and 820 - cell.radius / 2 - checkmax.radius >= distance:
+                if checkmax and selfmin.radius / 1.414 > checkmax.radius * 1.15  and not self.splitCooldown and 820 - cell.radius / 2 - checkmax.radius >= distance:
                     # Splitkill the target
                     self.splitCooldown = 10
-                    relative = checkmax.position.clone().sub(cell.position)
+                    relative = checkmax.position.clone().sub(selfmin.position)
                     if relative.sqDist():
                         relative = relative.normalize()
                     action[0] = relative.x
