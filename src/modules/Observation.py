@@ -3,9 +3,9 @@ import torch
 class AgarObservation():
     def __init__(self, obs):
         self.obs = obs
-        self.tensorobs = None
+        self.tensor_obs = None
 
-    def tensor_obs(self, device):
+    def to(self, device):
         parsed_env_obs = []
         for player_obs in self.obs:
             playercells = [torch.from_numpy(player).to(device) for player in playercells]
@@ -14,6 +14,6 @@ class AgarObservation():
             ejectedcells = torch.from_numpy(player_obs['ejected']).to(device)
             parsed_env_obs.append({'player': playercells, 'food': foodcells, 'virus': viruscells, 'ejected': ejectedcells})
 
-        self.tensorobs = parsed_env_obs
+        self.tensor_obs = parsed_env_obs
 
         return self
