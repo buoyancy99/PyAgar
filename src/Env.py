@@ -7,6 +7,7 @@
 
 import gym
 from GameServer import GameServer
+from modules import AgarObservation
 from players import Player, Bot
 import numpy as np
 import rendering
@@ -33,7 +34,7 @@ class AgarEnv(gym.Env):
             bot.step()
 
         self.server.Update()
-        observations = [self.parse_obs(agent) for agent in self.agents]
+        observations = AgarObservation([self.parse_obs(agent) for agent in self.agents])
         rewards = [self.parse_reward(agent) for agent in self.agents]
         done = False
         info = {}
@@ -48,7 +49,7 @@ class AgarEnv(gym.Env):
         self.server.addPlayers(self.players)
         self.viewer = None
         self.server.Update()
-        observations = [self.parse_obs(agent) for agent in self.agents]
+        observations = AgarObservation([self.parse_obs(agent) for agent in self.agents])
         return observations
 
     def parse_obs(self, player):
