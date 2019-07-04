@@ -64,12 +64,12 @@ class AgarEnv(gym.Env):
                 else:
                     obs[0][owner] = [feature]
 
-        playercells = [np.concatenate(v, 0) for k, v in obs[0].items()]
-        foodcells = np.concatenate(obs[1], 0) if obs[1] else None
+        playercells = [np.concatenate(v, 0) for k, v in obs[0].items()] # a list of np array. each array represents the state of all cells owned by a player
+        foodcells = np.concatenate(obs[1], 0) if obs[1] else None # np array, each row represents a cell
         viruscells = np.concatenate(obs[2], 0) if obs[2] else None
         ejectedcells = np.concatenate(obs[3], 0) if obs[3] else None
 
-        return playercells, foodcells, viruscells, ejectedcells
+        return {'player': playercells, 'food': foodcells, 'virus': viruscells, 'ejected': ejectedcells}
 
     def cell_obs(self, cell, player):
         if cell.cellType == 0:
