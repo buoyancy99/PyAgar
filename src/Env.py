@@ -14,7 +14,7 @@ import rendering
 
 
 class AgarEnv(gym.Env):
-    def __init__(self, num_agents, num_bots, gamemode = 0):
+    def __init__(self, num_agents = 1, num_bots = 9, gamemode = 0):
         super(AgarEnv, self).__init__()
         self.viewer = None
         self.num_players = num_agents + num_bots
