@@ -10,7 +10,7 @@ class Bot(Player):
         self.splitCooldown = 0
         self.actionstamp = np.zeros(4)
 
-    def step(self):
+    def step(self, *kargs, **kwargs):
         if len(self.cells) == 0:
             self.isRemoved = True
         if self.isRemoved:
@@ -34,13 +34,15 @@ class Bot(Player):
         self.mouse = self.centerPos.add(Vec2(self.action[0] * 800, self.action[1] * 800), 1)
         if self.action[2] == 1:
             self.pressSpace()
-        elif self.action[3] == 1:
+        elif self.action[2] == 2:
             self.pressW()
+        elif self.action[2] == 0:
+            pass
 
     def peace_step(self):
         visible_food = []
         visible_virus = []
-        action = np.zeros(4)
+        action = np.zeros(3)
         has_enemy = False
         for cell in self.viewNodes:
             if cell.cellType == 1 or cell.cellType == 3:
@@ -85,7 +87,7 @@ class Bot(Player):
     def aggressive_step(self):
         cell = self.maxcell()
         result = Vec2(0, 0);  # For splitting
-        action = np.zeros(4)
+        action = np.zeros(3)
 
         for check in self.viewNodes:
             if check.owner == self:
@@ -152,10 +154,10 @@ class Bot(Player):
             if check.cellType == 0:
                 checkmax = check.owner.maxcell()
                 selfmin = self.mincell()
-                if checkmax and selfmin.radius / 1.414 > checkmax.radius * 1.15  and not self.splitCooldown and 820 - cell.radius / 2 - checkmax.radius >= distance:
+                if checkmax and cell.radius / 1.414 > checkmax.radius * 1.15 and selfmin.radius > checkmax.radius and not self.splitCooldown and 820 - cell.radius / 2 - checkmax.radius >= distance:
                     # Splitkill the target
                     self.splitCooldown = 10
-                    relative = checkmax.position.clone().sub(selfmin.position)
+                    relative = checkmax.position.clone().sub(cell.position)
                     if relative.sqDist():
                         relative = relative.normalize()
                     action[0] = relative.x

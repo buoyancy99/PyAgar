@@ -122,7 +122,7 @@ class GameServer:
         #     player.playerTracker.sendUpdate()
 
     def Update(self):
-        skipstep = 1
+        skipstep = 2
         for i in range(skipstep):
             self.WorldStep()
 
@@ -368,7 +368,7 @@ class GameServer:
 
         # Create cell and add it to node list
         newCell = PlayerCell(self, player, parent.position, radius)
-        newCell.setBoost(self.config.splitVelocity * math.pow(radius, 0.0122), angle)
+        newCell.setBoost(self.config.splitVelocity, angle)
         self.addNode(newCell)
 
     def randomPos(self):

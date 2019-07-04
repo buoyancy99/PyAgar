@@ -6,11 +6,9 @@
 
 
 import gym
-from gym import spaces
-from gamemodes import *
 from GameServer import GameServer
 from players import Player, Bot
-import time
+import numpy as np
 import rendering
 
 
@@ -23,6 +21,11 @@ class AgarEnv(gym.Env):
         self.num_bots = num_bots
         self.gamemode = gamemode
 
+        # factors for reward
+        self.mass_reward_eps = 0.01  # make the max mass reward < 100
+        self.kill_reward_eps = 10
+        self.killed_reward_eps = 10
+
     def step(self, actions):
         for action, agent in zip(actions, self.agents):
             agent.step(action)
@@ -30,10 +33,11 @@ class AgarEnv(gym.Env):
             bot.step()
 
         self.server.Update()
-        observations = [agent.viewNodes for agent in self.agents]
-        rewards = []
+        observations = [self.parse_obs(agent) for agent in self.agents]
+        rewards = [self.parse_reward(agent) for agent in self.agents]
         done = False
-        return observations, rewards, done
+        info = {}
+        return observations, rewards, done, info
 
     def reset(self):
         self.server = GameServer()
@@ -44,8 +48,94 @@ class AgarEnv(gym.Env):
         self.server.addPlayers(self.players)
         self.viewer = None
         self.server.Update()
-        observations = [agent.viewNodes for agent in self.agents]
+        observations = [self.parse_obs(agent) for agent in self.agents]
         return observations
+
+    def parse_obs(self, player):
+        obs = [{}, [], [], []]
+        for cell in player.viewNodes:
+            t, feature = self.cell_obs(cell, player)
+            if t != 0:  # if type is not player, directly append
+                obs[t].append(feature)
+            else:
+                owner = cell.owner
+                if owner in obs[0]:
+                    obs[0][owner].append(feature)
+                else:
+                    obs[0][owner] = [feature]
+
+        playercells = [np.concatenate(v, 0) for k, v in obs[0].items()]
+        foodcells = np.concatenate(obs[1], 0) if obs[1] else None
+        viruscells = np.concatenate(obs[2], 0) if obs[2] else None
+        ejectedcells = np.concatenate(obs[3], 0) if obs[3] else None
+
+        return playercells, foodcells, viruscells, ejectedcells
+
+    def cell_obs(self, cell, player):
+        if cell.cellType == 0:
+            # player features
+            boost_x = (cell.boostDistance * cell.boostDirection.x) / self.server.config.splitVelocity  # [-1, 1]
+            boost_y = cell.boostDistance * cell.boostDirection.y / self.server.config.splitVelocity  # [-1, 1]
+            radius = cell.radius / 400  # need to think about mean though [0, infinite...]  # fixme
+            log_radius = np.log(cell.radius / 100)  # need to think about mean though   # fixme
+            position_x = (cell.position.x - self.server.config.borderWidth / 2) / self.server.config.borderWidth * 2  # [-1, 1]
+            position_y = (cell.position.y - self.server.config.borderHeight / 2) / self.server.config.borderHeight * 2  # [-1, 1]
+            relative_position_x = (cell.position.x - player.centerPos.x - self.server.config.serverViewBaseX / 2) / self.server.config.serverViewBaseX * 2  # [-1, 1]
+            relative_position_y = (cell.position.y - player.centerPos.y - self.server.config.serverViewBaseY / 2) / self.server.config.serverViewBaseY * 2  # [-1, 1]
+            canRemerge = onehot(cell.canRemerge, ndim=2)  # len 2 onehot 0 or 1
+            ismycell = onehot(cell.owner == player, ndim=2)  # len 2 onehot 0 or 1
+            features_player = np.array([[boost_x, boost_y, radius, log_radius, position_x, position_y, relative_position_x, relative_position_y]])
+            features_player = np.concatenate([features_player, canRemerge, ismycell], axis=1)
+            return cell.cellType, features_player
+
+        elif cell.cellType == 1:
+            # food features
+            radius = (cell.radius - (self.server.config.foodMaxRadius + self.server.config.foodMinRadius) / 2) / (self.server.config.foodMaxRadius - self.server.config.foodMinRadius) * 2  # fixme
+            log_radius = np.log(cell.radius / ((self.server.config.foodMaxRadius + self.server.config.foodMinRadius) / 2))  # fixme
+            position_x = (cell.position.x - self.server.config.borderWidth / 2) / self.server.config.borderWidth * 2  # [-1, 1]
+            position_y = (cell.position.y - self.server.config.borderHeight / 2) / self.server.config.borderHeight * 2  # [-1, 1]
+            relative_position_x = (cell.position.x - player.centerPos.x - self.server.config.serverViewBaseX / 2) / self.server.config.serverViewBaseX * 2  # [-1, 1]
+            relative_position_y = (cell.position.y - player.centerPos.y - self.server.config.serverViewBaseY / 2) / self.server.config.serverViewBaseY * 2  # [-1, 1]
+            features_food = np.array([[radius, log_radius, position_x, position_y, relative_position_x, relative_position_y]])
+            return cell.cellType, features_food
+
+        elif cell.cellType == 2:
+            # virus features
+            boost_x = (cell.boostDistance * cell.boostDirection.x) / self.server.config.splitVelocity  # [-1, 1]
+            boost_y = cell.boostDistance * cell.boostDirection.y / self.server.config.splitVelocity  # [-1, 1]
+            radius = (cell.radius - (self.server.config.virusMaxRadius + self.server.config.virusMinRadius) / 2) / (self.server.config.virusMaxRadius - self.server.config.virusMinRadius) * 2  # fixme
+            log_radius = np.log(cell.radius / ((self.server.config.virusMaxRadius + self.server.config.virusMinRadius) / 2))  # fixme
+            position_x = (cell.position.x - self.server.config.borderWidth / 2) / self.server.config.borderWidth * 2  # [-1, 1]
+            position_y = (cell.position.y - self.server.config.borderHeight / 2) / self.server.config.borderHeight * 2  # [-1, 1]
+            relative_position_x = (cell.position.x - player.centerPos.x - self.server.config.serverViewBaseX / 2) / self.server.config.serverViewBaseX * 2  # [-1, 1]
+            relative_position_y = (cell.position.y - player.centerPos.y - self.server.config.serverViewBaseY / 2) / self.server.config.serverViewBaseY * 2  # [-1, 1]
+            features_virus = np.array([[boost_x, boost_y, radius, log_radius, position_x, position_y, relative_position_x, relative_position_y]])
+            return cell.cellType, features_virus
+
+        elif cell.cellType == 3:
+            # ejected mass features
+            boost_x = (cell.boostDistance * cell.boostDirection.x) / self.server.config.splitVelocity  # [-1, 1]
+            boost_y = cell.boostDistance * cell.boostDirection.y / self.server.config.splitVelocity  # [-1, 1]
+            position_x = (cell.position.x - self.server.config.borderWidth / 2) / self.server.config.borderWidth * 2  # [-1, 1]
+            position_y = (cell.position.y - self.server.config.borderHeight / 2) / self.server.config.borderHeight * 2  # [-1, 1]
+            relative_position_x = (cell.position.x - player.centerPos.x - self.server.config.serverViewBaseX / 2) / self.server.config.serverViewBaseX * 2  # [-1, 1]
+            relative_position_y = (cell.position.y - player.centerPos.y - self.server.config.serverViewBaseY / 2) / self.server.config.serverViewBaseY * 2  # [-1, 1]
+            features_food = np.array([[boost_x, boost_y, position_x, position_y, relative_position_x, relative_position_y]])
+            return cell.cellType, features_food
+
+    def parse_reward(self, player):
+        mass_reward, kill_reward, killed_reward = self.calc_reward(player)
+        # reward for being --- big, not dead, eating part of others, killing all of others, not be eaten by someone
+        reward = mass_reward * self.mass_reward_eps + \
+                 kill_reward * self.kill_reward_eps + \
+                 killed_reward * self.killed_reward_eps
+        return reward
+
+    def calc_reward(self, player):
+        mass_reward = sum([c.mass for c in player.cells])
+        kill_reward = player.killreward
+        killedreward = player.killedreward
+        return mass_reward, kill_reward, killedreward
 
     def render(self, playeridx, mode = 'human'):
         # time.sleep(0.001)
@@ -152,7 +242,13 @@ class AgarEnv(gym.Env):
             self.geoms_to_render.append(geom)
 
 
-def close(self):
+    def close(self):
         if self.viewer is not None:
             self.viewer.close()
             self.viewer = None
+
+
+def onehot(d, ndim):
+    v = np.zeros((1, ndim))
+    v[0, d] = 1
+    return v

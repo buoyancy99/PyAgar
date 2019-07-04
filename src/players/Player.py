@@ -1,8 +1,5 @@
 from modules import *
-from entity import *
-from gamemodes import *
 import math
-import numpy as np
 
 class Player:
     def __init__(self, gameServer, name = 'dummy'):
@@ -20,14 +17,20 @@ class Player:
         self.rec = False
         self.viewNodes = []
         self.lastEject = None
-        if gameServer:
-            gameServer.lastPlayerId += 1
-            self.pID = gameServer.lastPlayerId
-            gameServer.gameMode.onPlayerInit(self)
-            self.joinGame()
-            self.updateView()
+        self.killreward = 0
+        self.killedreward = 0
 
-    def step(self, action):
+        if gameServer:
+                gameServer.lastPlayerId += 1
+                self.pID = gameServer.lastPlayerId
+                gameServer.gameMode.onPlayerInit(self)
+                self.joinGame()
+                self.updateView()
+
+    def step(self, action, *kargs, **kwargs):
+        self.killreward = 0
+        self.killedreward = 0
+
         if len(self.cells) == 0:
             self.isRemoved = True
         if self.isRemoved:
@@ -39,8 +42,10 @@ class Player:
         # assert np.sum(action[2:]) == 1
         if action[2] == 1:
             self.pressSpace()
-        elif action[3] == 1:
+        elif action[2] == 2:
             self.pressW()
+        elif action[2] == 0:
+            pass
 
         # self.updateView()
 

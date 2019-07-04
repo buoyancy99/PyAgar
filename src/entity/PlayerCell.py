@@ -35,3 +35,13 @@ class PlayerCell(Cell):
             self.gameServer.nodesPlayer.remove(self)
 
         gameServer.gameMode.onCellRemove(self)
+
+    def onEat(self, prey):
+        if prey.cellType == 0:
+            self.owner.killreward += prey.mass
+        super().onEat(prey)
+
+    def onEaten(self, hunter):
+        if hunter.cellType == 0:
+            self.owner.killedreward -= self.mass
+        super().onEaten(hunter)
