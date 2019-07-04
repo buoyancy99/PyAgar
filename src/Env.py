@@ -35,7 +35,7 @@ class AgarEnv(gym.Env):
 
         self.server.Update()
         observations = AgarObservation([self.parse_obs(agent) for agent in self.agents])
-        rewards = [self.parse_reward(agent) for agent in self.agents]
+        rewards = np.array([self.parse_reward(agent) for agent in self.agents])
         done = False
         info = {}
         return observations, rewards, done, info
