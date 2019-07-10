@@ -1,4 +1,4 @@
-from src.modules import *
+from modules import *
 import math
 
 class Player:

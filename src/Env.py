@@ -6,11 +6,11 @@
 
 
 import gym
-from src.GameServer import GameServer
-from src.modules import AgarObservation
-from src.players import Player, Bot
+from GameServer import GameServer
+from modules import AgarObservation
+from players import Player, Bot
 import numpy as np
-import src.rendering as rendering
+import rendering
 
 
 class AgarEnv(gym.Env):

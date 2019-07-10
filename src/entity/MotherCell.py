@@ -2,7 +2,7 @@ from .Food import Food
 from .Cell import Cell
 import math
 import random
-from src.modules import *
+from modules import *
 
 class MotherCell(Cell):
     def __init__(self, gameServer, owner, position, radius):
