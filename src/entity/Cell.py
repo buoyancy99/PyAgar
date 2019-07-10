@@ -1,5 +1,5 @@
 import math
-from modules import *
+from src.modules import *
 
 class Cell:
     def __init__(self, gameServer, owner, position, radius):

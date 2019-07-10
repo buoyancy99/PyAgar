@@ -1,5 +1,5 @@
 from .Mode import Mode
-from modules import *
+from src.modules import *
 import random
 import math
 

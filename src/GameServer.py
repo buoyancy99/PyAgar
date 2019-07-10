@@ -1,9 +1,9 @@
 import math
-from Config import Config
+from src.Config import Config
 import random
-from modules import *
-from entity import *
-from gamemodes import *
+from src.modules import *
+from src.entity import *
+from src.gamemodes import *
 
 # noinspection PyAttributeOutsideInit
 class GameServer:
