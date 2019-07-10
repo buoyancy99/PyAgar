@@ -1,4 +1,4 @@
-from .Cell import Cell
+from src.entity.Cell import Cell
 class Food(Cell):
     def __init__(self, gameServer, owner, position, radius):
         Cell.__init__(self, gameServer, owner, position, radius)

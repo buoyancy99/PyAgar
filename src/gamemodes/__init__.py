@@ -1,5 +1,5 @@
-from .FFA import FFA
-from .Teams import Teams
+from src.gamemodes.FFA import FFA
+from src.gamemodes.Teams import Teams
 
 def Get_Game_Mode(mode):
     if mode == 0:
