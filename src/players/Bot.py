@@ -1,6 +1,6 @@
-from .Player import Player
+from src.players.Player import Player
 import numpy as np
-from modules import *
+from src.modules import *
 import random
 
 class Bot(Player):
