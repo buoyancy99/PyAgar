@@ -1,1 +1,2 @@
-from src.Env import AgarEnv
+import sys
+sys.path.append(".")
