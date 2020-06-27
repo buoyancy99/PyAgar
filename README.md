@@ -1,5 +1,5 @@
 # Agar.io in Python
-Openai Gym environment to play a local version of agar.io, a multiple agent game. 
+Openai Gym environment to play a local version of https://agar.io, a multiple agent game. 
 This project referenced javascript impelmentation of agar https://github.com/m-byte918/MultiOgar-Edited but rewritten and heavily modified to python
 
 # Progress
